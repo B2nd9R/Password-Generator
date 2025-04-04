@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>مولد كلمات المرور الآمنة</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>مولد كلمات المرور الآمنة</h1>
+      <p>اختر نوع كلمة المرور وأنشئها بسهولة وأمان</p>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="type">نوع كلمة المرور:</label>
+        <select id="type">
+          <option value="custom">مخصصة</option>
+          <option value="strong">قوية</option>
+          <option value="memorable">سهلة التذكر</option>
+          <option value="pin_generator">رمز PIN</option>
+        </select>
+      </div>
+
+      <div id="custom-options">
+        <div class="control-group">
+          <label for="length">طول كلمة المرور:</label>
+          <input type="number" id="length" min="4" max="32" value="12">
+        </div>
+
+        <div class="control-group">
+          <label>خيارات كلمة المرور:</label>
+          <div class="checkbox-group">
+            <input type="checkbox" id="uppercase" checked>
+            <label for="uppercase">أحرف كبيرة (A-Z)</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="numbers" checked>
+            <label for="numbers">أرقام (0-9)</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="symbols" checked>
+            <label for="symbols">رموز خاصة (!@#$%)</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="pin-options" style="display: none;">
+        <div class="control-group">
+          <label for="pin-length">طول رمز PIN:</label>
+          <select id="pin-length">
+            <option value="4">4 أرقام</option>
+            <option value="6">6 أرقام</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="generate">إنشاء كلمة مرور</button>
+
+    <div class="result">
+      <input type="text" id="password" readonly placeholder="ستظهر كلمة المرور هنا">
+      <button class="copy-btn" id="copy">نسخ</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
