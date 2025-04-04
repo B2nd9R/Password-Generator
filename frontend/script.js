@@ -1,7 +1,14 @@
+// تحديد العناصر
 const typeSelector = document.getElementById('type');
 const customOptions = document.getElementById('custom-options');
 const pinOptions = document.getElementById('pin-options');
+const themeToggleBtn = document.getElementById('theme-toggle');
+const generateBtn = document.getElementById('generate');
+const copyBtn = document.getElementById('copy');
+const passwordField = document.getElementById('password');
+const pinLengthInput = document.getElementById('pin-length');
 
+// تغيير خيارات بناءً على نوع كلمة المرور المختار
 typeSelector.addEventListener('change', () => {
   const selectedType = typeSelector.value;
 
@@ -9,8 +16,9 @@ typeSelector.addEventListener('change', () => {
   pinOptions.style.display = selectedType === 'pin_generator' ? 'block' : 'none';
 });
 
-document.getElementById('generate').addEventListener('click', async () => {
-  const type = document.getElementById('type').value;
+// توليد كلمة المرور بناءً على الخيارات المحددة
+generateBtn.addEventListener('click', async () => {
+  const type = typeSelector.value;
   const length = parseInt(document.getElementById('length').value);
   const uppercase = document.getElementById('uppercase').checked;
   const numbers = document.getElementById('numbers').checked;
@@ -22,46 +30,35 @@ document.getElementById('generate').addEventListener('click', async () => {
   if (type === 'custom') {
     const characters = prompt("أدخل الأحرف التي تريد استخدامها:");
     endpoint = '/generate/custom';
-    body = {
-      characters,
-      length
-    };
+    body = { characters, length };
   } else if (type === 'strong') {
     endpoint = '/generate/strong';
-    body = {
-      length,
-      uppercase,
-      numbers,
-      symbols
-    };
+    body = { length, uppercase, numbers, symbols };
   } else if (type === 'memorable') {
     endpoint = '/generate/memorable';
-    body = {
-      num_words: 3,
-      separator: '-'
-    };
+    body = { num_words: 3, separator: '-' };
   } else if (type === 'pin_generator') {
     endpoint = '/generate/pin';
-    const pinLength = parseInt(document.getElementById('pin-length').value);
-    body = {
-      length: pinLength
-    };
+    const pinLength = parseInt(pinLengthInput.value);
+    body = { length: pinLength };
   }
 
-  const response = await fetch(`http://localhost:8000${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(`http://localhost:8000${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-  const data = await response.json();
-  document.getElementById('password').value = data.password;
+    const data = await response.json();
+    passwordField.value = data.password;
+  } catch (error) {
+    console.error("Error generating password:", error);
+  }
 });
 
-document.getElementById('copy').addEventListener('click', () => {
-  const passwordField = document.getElementById('password');
+// نسخ كلمة المرور إلى الحافظة
+copyBtn.addEventListener('click', () => {
   passwordField.select();
   document.execCommand('copy');
 
@@ -69,12 +66,38 @@ document.getElementById('copy').addEventListener('click', () => {
   message.className = 'copied-message';
   message.textContent = 'تم نسخ كلمة المرور بنجاح!';
   document.body.appendChild(message);
-  message.style.display = 'block';
 
+  // عرض الرسالة وإخفائها بعد فترة قصيرة
+  message.style.display = 'block';
   setTimeout(() => {
     message.style.display = 'none';
     setTimeout(() => {
       message.remove();
     }, 300);
   }, 2000);
+});
+
+// التبديل بين الثيمات
+themeToggleBtn.addEventListener('click', () => {
+  const body = document.body;
+  
+  if (body.classList.contains('light-theme')) {
+    body.classList.remove('light-theme');
+    body.classList.add('dark-theme');
+    localStorage.setItem('theme', 'dark-theme');
+  } else {
+    body.classList.remove('dark-theme');
+    body.classList.add('light-theme');
+    localStorage.setItem('theme', 'light-theme');
+  }
+});
+
+// تحميل الثيم المختار من localStorage عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    document.body.classList.add(savedTheme);
+  } else {
+    document.body.classList.add('light-theme');
+  }
 });
