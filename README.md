@@ -33,6 +33,7 @@
 - [⚙️ طريقة التنصيب](docs/INSTALLATION.md)
 - [📁 هيكل الملفات](docs/STRUCTURE.md)
 - [🤝 المساهمة](docs/CONTRIBUTING.md)
+- [⌚ سجل التغييرات](docs/CHANGELOG.md)
 
 ---
 
