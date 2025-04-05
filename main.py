@@ -1,16 +1,15 @@
 # python -m uvicorn main:app --reload
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 import os
-from backend.api import app  # استيراد app من ملف api.py
-
-# احصل على المسار المطلق للفرونت إند
-frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
-
-if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+from backend.api import app  # استيراد app من ملف api.py المعدل
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    # تشغيل السيرفر مع إعدادات Render
+    uvicorn.run(
+        "backend.api:app",  # المسار الصحيح للتطبيق
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000)),
+        reload=True  # فقط للتنمية المحلية
+    )

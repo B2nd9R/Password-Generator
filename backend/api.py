@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi.exceptions import HTTPException
+import os
 
 # استيراد الدوال من مولدات كلمات المرور
 from backend.generators.strong import generate_secure_password
@@ -18,6 +23,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ======= خدمة الملفات الثابتة (CSS, JS, etc.) =======
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+# مسار الصفحة الرئيسية
+@app.get("/")
+async def serve_homepage():
+    # المسار الكامل لملف index.html
+    frontend_path = Path(__file__).parent.parent / "frontend" / "index.html"
+    
+    # التحقق من وجود الملف
+    if not frontend_path.exists():
+        raise HTTPException(status_code=404, detail="الصفحة الرئيسية غير متوفرة")
+    
+    return FileResponse(frontend_path)
 
 # ====== نماذج الطلبات ======
 
@@ -39,6 +59,11 @@ class CustomPasswordRequest(BaseModel):
     length: int
 
 # ====== نقاط النهاية ======
+
+# إعداد مسار الملفات الثابتة
+frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+
+app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 @app.post("/generate/strong")
 def generate_strong(request: StrongPasswordRequest):
