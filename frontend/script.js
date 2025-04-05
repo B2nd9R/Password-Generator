@@ -99,10 +99,11 @@ const handlers = {
           break;
       }
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(`https://your-service-name.onrender.com${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        credentials: 'same-origin' // مهم لسياسة CORS
       });
 
       if (!response.ok) {
