@@ -11,5 +11,6 @@ if __name__ == "__main__":
         "backend.api:app",  # المسار الصحيح للتطبيق
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        reload=True  # فقط للتنمية المحلية
+        reload=True,  # فقط للتنمية المحلية
+        log_level="debug"  # لتسجيل كل الطلبات
     )

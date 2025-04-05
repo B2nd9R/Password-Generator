@@ -1,18 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from fastapi.responses import FileResponse
-from fastapi.exceptions import HTTPException
 import os
+import logging
 
-# استيراد الدوال من مولدات كلمات المرور
-from backend.generators.strong import generate_secure_password
-from backend.generators.memorable import generate_memorable_password
-from backend.generators.pin_generator import generate_pin
-from backend.generators.custom import generate_custom_password
+# إعداد التسجيل
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -24,28 +22,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ======= خدمة الملفات الثابتة (CSS, JS, etc.) =======
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+# خدمة الملفات الثابتة
+frontend_path = Path(__file__).parent.parent / "frontend"
+app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
-# مسار الصفحة الرئيسية
-@app.get("/")
-async def serve_homepage():
-    # المسار الكامل لملف index.html
-    frontend_path = Path(__file__).parent.parent / "frontend" / "index.html"
-    
-    # التحقق من وجود الملف
-    if not frontend_path.exists():
-        raise HTTPException(status_code=404, detail="الصفحة الرئيسية غير متوفرة")
-    
-    return FileResponse(frontend_path)
-
-# ====== نماذج الطلبات ======
-
+# نماذج البيانات
 class StrongPasswordRequest(BaseModel):
-    length: int
-    uppercase: bool
-    numbers: bool
-    symbols: bool
+    length: int = 8
+    uppercase: bool = True
+    numbers: bool = True
+    symbols: bool = True
 
 class MemorablePasswordRequest(BaseModel):
     num_words: Optional[int] = 3
@@ -58,42 +44,66 @@ class CustomPasswordRequest(BaseModel):
     characters: str
     length: int
 
-# ====== نقاط النهاية ======
-
-# إعداد مسار الملفات الثابتة
-frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
-
-app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+# نقاط النهاية
+@app.get("/")
+async def serve_home():
+    index_path = frontend_path / "index.html"
+    if not index_path.exists():
+        logger.error("ملف index.html غير موجود")
+        raise HTTPException(status_code=404, detail="الصفحة غير متوفرة")
+    return FileResponse(index_path)
 
 @app.post("/generate/strong")
-def generate_strong(request: StrongPasswordRequest):
-    password = generate_secure_password(
-        length=request.length,
-        uppercase=request.uppercase,
-        numbers=request.numbers,
-        symbols=request.symbols
-    )
-    return {"password": password}
+async def generate_strong(request: StrongPasswordRequest):
+    try:
+        password = generate_secure_password(
+            length=request.length,
+            uppercase=request.uppercase,
+            numbers=request.numbers,
+            symbols=request.symbols
+        )
+        logger.info(f"تم توليد كلمة مرور قوية: {password[:2]}...")
+        return {"password": password}
+    except Exception as e:
+        logger.error(f"خطأ في توليد كلمة مرور قوية: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/generate/memorable")
-def generate_memorable(request: MemorablePasswordRequest):
-    password = generate_memorable_password(
-        num_words=request.num_words,
-        separator=request.separator
-    )
-    return {"password": password}
+async def generate_memorable(request: MemorablePasswordRequest):
+    try:
+        password = generate_memorable_password(
+            num_words=request.num_words,
+            separator=request.separator
+        )
+        logger.info(f"تم توليد كلمة مرور سهلة التذكر")
+        return {"password": password}
+    except Exception as e:
+        logger.error(f"خطأ في توليد كلمة مرور سهلة: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/generate/pin")
-def generate_pin_code(request: PinRequest):
-    if request.length not in [4, 6]:
-        return {"error": "Pin length must be 4 or 6"}
-    pin = generate_pin(length=request.length)
-    return {"password": pin}
+async def generate_pin_code(request: PinRequest):
+    try:
+        if request.length not in [4, 6]:
+            raise ValueError("يجب أن يكون طول PIN 4 أو 6 أرقام")
+        pin = generate_pin(length=request.length)
+        logger.info(f"تم توليد PIN: {pin[:2]}...")
+        return {"password": pin}
+    except Exception as e:
+        logger.error(f"خطأ في توليد PIN: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/generate/custom")
-def generate_custom(request: CustomPasswordRequest):
-    password = generate_custom_password(
-        characters=request.characters,
-        length=request.length
-    )
-    return {"password": password}
+async def generate_custom(request: CustomPasswordRequest):
+    try:
+        if len(request.characters) < 4:
+            raise ValueError("يجب إدخال 4 أحرف على الأقل")
+        password = generate_custom_password(
+            characters=request.characters,
+            length=request.length
+        )
+        logger.info(f"تم توليد كلمة مرور مخصصة")
+        return {"password": password}
+    except Exception as e:
+        logger.error(f"خطأ في توليد كلمة مرور مخصصة: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
