@@ -23,9 +23,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# خدمة الملفات الثابتة
-frontend_path = Path(__file__).parent.parent / "frontend"
-app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+# المسارات الصحيحة
+BASE_DIR = Path(__file__).parent.parent  # المجلد الجذر للمشروع
+FRONTEND_DIR = BASE_DIR / "frontend"
+
+# خدمة الملفات الثابتة (CSS, JS, الصور)
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "static"), name="static")
+app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
+
 
 # نماذج البيانات
 class StrongPasswordRequest(BaseModel):
