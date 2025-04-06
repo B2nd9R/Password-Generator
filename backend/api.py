@@ -53,7 +53,7 @@ class CustomPasswordRequest(BaseModel):
 # نقاط النهاية
 @app.get("/")
 async def serve_home():
-    index_path = frontend_path / "index.html"
+    index_path = FRONTEND_DIR / "index.html"
     if not index_path.exists():
         logger.error("ملف index.html غير موجود")
         raise HTTPException(status_code=404, detail="الصفحة غير متوفرة")
@@ -62,7 +62,7 @@ async def serve_home():
 @app.post("/generate/strong")
 async def generate_strong(request: StrongPasswordRequest):
     try:
-        password = generate_secure_password(
+        password = generate_strong_password(
             length=request.length,
             uppercase=request.uppercase,
             numbers=request.numbers,
