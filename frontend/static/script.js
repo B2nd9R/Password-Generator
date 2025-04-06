@@ -99,7 +99,7 @@ const handlers = {
           break;
       }
 
-      const response = await fetch(`https://password-generator-vm7k.onrender.com/${endpoint}`, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

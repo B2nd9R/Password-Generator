@@ -26,10 +26,12 @@ app.add_middleware(
 # المسارات الصحيحة
 BASE_DIR = Path(__file__).parent.parent  # المجلد الجذر للمشروع
 FRONTEND_DIR = BASE_DIR / "frontend"
+STATIC_DIR = FRONTEND_DIR / "static"
+ASSETS_DIR = FRONTEND_DIR / "assets"
 
 # خدمة الملفات الثابتة (CSS, JS, الصور)
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "static"), name="static")
-app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
 
 # نماذج البيانات
@@ -113,3 +115,9 @@ async def generate_custom(request: CustomPasswordRequest):
     except Exception as e:
         logger.error(f"خطأ في توليد كلمة مرور مخصصة: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+    
+print("\n=== مسارات الملفات ===")
+print(f"دليل الجذر: {BASE_DIR}")
+print(f"يوجد مجلد frontend: {FRONTEND_DIR.exists()}")
+print(f"يوجد ملف index.html: {(FRONTEND_DIR/'index.html').exists()}")
+print(f"يوجد مجلد static: {(FRONTEND_DIR/'static').exists()}\n")

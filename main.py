@@ -1,6 +1,5 @@
 # python -m uvicorn main:app --reload
 
-from fastapi import FastAPI
 import os
 from backend.api import app  # استيراد app من ملف api.py المعدل
 
