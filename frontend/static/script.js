@@ -54,7 +54,7 @@ try {
     const handlers = {
       handleTypeChange: () => {
         const type = elements.typeSelector.value;
-        elements.customOptions.style.display = ['custom', 'strong'].includes(type) ? 'block' : 'none';
+        elements.customOptions.style.display = type === 'custom' ? 'block' : 'none';
         elements.pinOptions.style.display = type === 'pin' ? 'block' : 'none';
       },
   
