@@ -1,0 +1,24 @@
+{
+    "page_title": "مولد كلمات المرور الآمنة",
+    "title": "مولد كلمات المرور الآمنة",
+    "description": "اختر نوع كلمة المرور وأنشئها بسهولة وأمان",
+    "theme_toggle": "تغيير الثيم",
+    "theme_icon": "fa fa-sun icon",
+    "password_type": "نوع كلمة المرور:",
+    "custom_option": "مخصصة",
+    "strong_option": "قوية",
+    "memorable_option": "سهلة التذكر",
+    "pin_option": "رمز PIN",
+    "password_length": "طول كلمة المرور:",
+    "custom_chars": "أدخل الحروف المخصصة:",
+    "generate_button": "إنشاء كلمة مرور",
+    "loading_text": "جارٍ التوليد...",
+    "password_placeholder": "ستظهر كلمة المرور هنا",
+    "copy_button": "نسخ",
+    "uppercase": "أحرف كبيرة (A-Z)",
+    "numbers": "أرقام (0-9)",
+    "symbols": "رموز خاصة (!@#$%)",
+    "pin_length": "طول رمز PIN:",
+    "language": "English"
+  }
+  

@@ -3,77 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
-  <title>مولد كلمات المرور الآمنة</title>
+  <title data-translate="page_title">مولد كلمات المرور الآمنة</title>
   <link rel="icon" href="/assets/logo.png" type="image/x-icon">
   <link rel="stylesheet" href="/static/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
+
+  <!-- أزرار تبديل اللغة -->
+  <div class="language-switcher">
+    <button class="button" id="language-ar" onclick="changeLanguage('ar')">العربية</button>
+    <button class="button" id="language-en" onclick="changeLanguage('en')">English</button>
+  </div>
+  
+  <!-- المقدمة -->
   <div class="container">
     <div class="header">
-      <h1>مولد كلمات المرور الآمنة</h1>
-      <p>اختر نوع كلمة المرور وأنشئها بسهولة وأمان</p>
+      <h1 data-translate="title">مولد كلمات المرور الآمنة</h1>
+      <p data-translate="description">اختر نوع كلمة المرور وأنشئها بسهولة وأمان</p>
       <button id="theme-toggle" class="theme-toggle-btn">
-        تغيير الثيم
+        <span data-translate="theme_toggle">تغيير الثيم</span>
         <i id="theme-icon" class="fa fa-sun icon"></i>
       </button>
     </div>
 
+    <!-- قائمة الخيارات -->
     <div class="controls">
       <div class="control-group">
-        <label for="type">نوع كلمة المرور:</label>
+        <label for="type" data-translate="password_type">نوع كلمة المرور:</label>
         <select id="type">
-          <option value="custom">مخصصة</option>
-          <option value="strong">قوية</option>
-          <option value="memorable">سهلة التذكر</option>
-          <option value="pin">رمز PIN</option>
+          <option value="custom" data-translate="custom_option">مخصصة</option>
+          <option value="strong" data-translate="strong_option">قوية</option>
+          <option value="memorable" data-translate="memorable_option">سهلة التذكر</option>
+          <option value="pin" data-translate="pin_option">رمز PIN</option>
         </select>
       </div>
 
-      <!-- خيارات "مخصصة" -->
       <div id="custom-options">
         <div class="control-group">
-          <label for="length">طول كلمة المرور:</label>
+          <label for="length" data-translate="password_length">طول كلمة المرور:</label>
           <input type="number" id="length" min="4" max="32" value="12">
         </div>
 
         <div class="control-group">
-          <label for="custom-chars">أدخل الحروف المخصصة:</label>
+          <label for="custom-chars" data-translate="custom_chars">أدخل الحروف المخصصة:</label>
           <input type="text" id="custom-chars" placeholder="مثال: abc123!@#">
         </div>
       </div>
 
-      <!-- خيارات "قوية" -->
       <div id="strong-options" style="display: none;">
         <div class="control-group">
-          <label for="length">طول كلمة المرور:</label>
+          <label for="length" data-translate="password_length">طول كلمة المرور:</label>
           <input type="number" id="length" min="4" max="32" value="16">
         </div>
 
         <div class="control-group">
-          <label>خيارات كلمة المرور:</label>
+          <label data-translate="password_options">خيارات كلمة المرور:</label>
           <div class="checkbox-group">
             <input type="checkbox" id="uppercase" checked>
-            <label for="uppercase">أحرف كبيرة (A-Z)</label>
+            <label for="uppercase" data-translate="uppercase">أحرف كبيرة (A-Z)</label>
           </div>
 
           <div class="checkbox-group">
             <input type="checkbox" id="numbers" checked>
-            <label for="numbers">أرقام (0-9)</label>
+            <label for="numbers" data-translate="numbers">أرقام (0-9)</label>
           </div>
 
           <div class="checkbox-group">
             <input type="checkbox" id="symbols" checked>
-            <label for="symbols">رموز خاصة (!@#$%)</label>
+            <label for="symbols" data-translate="symbols">رموز خاصة (!@#$%)</label>
           </div>
         </div>
       </div>
 
-      <!-- خيارات "PIN" -->
       <div id="pin-options" style="display: none;">
         <div class="control-group">
-          <label for="pin-length">طول رمز PIN:</label>
+          <label for="pin-length" data-translate="pin_length">طول رمز PIN:</label>
           <select id="pin-length">
             <option value="4">4 أرقام</option>
             <option value="6">6 أرقام</option>
@@ -83,19 +89,15 @@
       </div>
     </div>
 
-    <button class="generate-btn" id="generate">إنشاء كلمة مرور</button>
+    <button class="generate-btn" id="generate" data-translate="generate_button">إنشاء كلمة مرور</button>
 
-    <div id="loading" class="loading-indicator" style="display: none;">جارٍ التوليد...</div>
+    <div id="loading" class="loading-indicator" style="display: none;" data-translate="loading_text">جارٍ التوليد...</div>
 
     <div class="result">
-      <input type="text" id="password" readonly placeholder="ستظهر كلمة المرور هنا">
-      <button class="copy-btn" id="copy">نسخ</button>
+      <input type="text" id="password" readonly placeholder="ستظهر كلمة المرور هنا" data-translate="password_placeholder">
+      <button class="copy-btn" id="copy" data-translate="copy_button">نسخ</button>
     </div>
   </div>
-
-  <div class="grid-pattern"></div>
-  <div class="dynamic-light" style="top: 30%; left: 70%;"></div>
-  <div class="dynamic-light" style="top: 70%; left: 30%;"></div>
 
   <script src="/static/script.js"></script>
 </body>

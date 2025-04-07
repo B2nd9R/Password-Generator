@@ -1,0 +1,23 @@
+{
+    "page_title": "Secure Password Generator",
+    "title": "Secure Password Generator",
+    "description": "Choose the password type and generate it easily and securely",
+    "theme_toggle": "Change Theme",
+    "theme_icon": "fa fa-sun icon",
+    "password_type": "Password Type:",
+    "custom_option": "Custom",
+    "strong_option": "Strong",
+    "memorable_option": "Memorable",
+    "pin_option": "PIN",
+    "password_length": "Password Length:",
+    "custom_chars": "Enter custom characters:",
+    "generate_button": "Generate Password",
+    "loading_text": "Generating...",
+    "password_placeholder": "Your password will appear here",
+    "copy_button": "Copy",
+    "uppercase": "Uppercase Letters (A-Z)",
+    "numbers": "Numbers (0-9)",
+    "symbols": "Special Symbols (!@#$%)",
+    "pin_length": "PIN Length:",
+    "language": "العربية"
+  }
