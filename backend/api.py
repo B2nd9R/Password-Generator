@@ -44,6 +44,8 @@ LANG_DIR = FRONTEND_DIR / "lang"
 # خدمة الملفات الثابتة
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+app.mount("/lang", StaticFiles(directory=LANG_DIR), name="lang")
+
 
 # تحميل ملفات اللغة
 def load_language(lang_code):
@@ -194,3 +196,18 @@ print(f"دليل الجذر: {BASE_DIR}")
 print(f"يوجد مجلد frontend: {FRONTEND_DIR.exists()}")
 print(f"يوجد ملف index.html: {(FRONTEND_DIR/'index.html').exists()}")
 print(f"يوجد مجلد static: {(FRONTEND_DIR/'static').exists()}\n")
+print(f"يوجد مجلد assets: {ASSETS_DIR.exists()}")
+print(f"يوجد مجلد lang: {LANG_DIR.exists()}")
+print("========================\n")
+print("=== بدء تشغيل FastAPI ===")
+print("استمع على http://localhost:8000")
+print("========================\n")
+print("=== إعداد CORS ===")
+print("السماح بالأصول من:")
+print("http://localhost:8000")
+print("http://localhost:3000")
+print("https://password-generator-vm7k.onrender.com")
+print("========================\n")
+print("=== إعداد التسجيل ===")
+print("مستوى التسجيل: INFO")
+print("========================\n")
