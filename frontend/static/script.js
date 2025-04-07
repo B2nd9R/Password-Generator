@@ -1,46 +1,11 @@
 // حالة التطبيق والترجمات
 const AppState = {
-  elements: {
-    typeSelector: document.getElementById('type'),
-    generateBtn: document.getElementById('generate'),
-    copyBtn: document.getElementById('copy'),
-    passwordField: document.getElementById('password'),
-    lengthInput: document.getElementById('length'),
-    uppercaseCheckbox: document.getElementById('uppercase'),
-    numbersCheckbox: document.getElementById('numbers'),
-    symbolsCheckbox: document.getElementById('symbols'),
-    strongOptions: document.getElementById('strong-options'),
-    pinLengthSelect: document.getElementById('pin-length'),
-    customCharsInput: document.getElementById('custom-chars'),
-    customOptions: document.getElementById('custom-options'),
-    pinOptions: document.getElementById('pin-options'),
-    themeToggle: document.getElementById('theme-toggle'),
-    loadingIndicator: document.getElementById('loading'),
-    pageTitle: document.getElementById('page-title'),
-    title: document.getElementById('title'),
-    description: document.getElementById('description'),
-    passwordTypeLabel: document.getElementById('password-type-label'),
-    customOption: document.getElementById('custom-option'),
-    strongOption: document.getElementById('strong-option'),
-    memorableOption: document.getElementById('memorable-option'),
-    pinOption: document.getElementById('pin-option'),
-    passwordLengthLabel: document.getElementById('password-length-label'),
-    customCharsLabel: document.getElementById('custom-chars-label'),
-    passwordInput: document.getElementById('password'),
-    uppercaseLabel: document.getElementById('uppercase-label'),
-    numbersLabel: document.getElementById('numbers-label'),
-    symbolsLabel: document.getElementById('symbols-label'),
-    pinLengthLabel: document.getElementById('pin-length-label'),
-    themeIcon: document.getElementById('theme-icon'),
-    languageToggle: document.getElementById('language-toggle'),
-    langArButton: document.getElementById('language-ar'),
-    langEnButton: document.getElementById('language-en')
-  },
-
+  elements: null,
+  
   state: {
     isLoading: false,
     currentTheme: localStorage.getItem('theme') || 'light',
-    currentLang: localStorage.getItem('lang') || 'en',
+    currentLang: localStorage.getItem('lang') || 'ar', // تغيير الافتراضي إلى العربية
     translations: {
       en: {},
       ar: {}
@@ -122,11 +87,17 @@ const Helpers = {
 
   setLoading: (isLoading) => {
     AppState.state.isLoading = isLoading;
-    AppState.elements.generateBtn.disabled = isLoading;
-    AppState.elements.loadingIndicator.style.display = isLoading ? 'block' : 'none';
-    AppState.elements.generateBtn.textContent = isLoading
-      ? AppState.state.translations[AppState.state.currentLang]?.loading_text || 'Loading...'
-      : AppState.state.translations[AppState.state.currentLang]?.generate_button || 'Generate';
+    if (AppState.elements.generateBtn) {
+      AppState.elements.generateBtn.disabled = isLoading;
+    }
+    if (AppState.elements.loadingIndicator) {
+      AppState.elements.loadingIndicator.style.display = isLoading ? 'block' : 'none';
+    }
+    if (AppState.elements.generateBtn) {
+      AppState.elements.generateBtn.textContent = isLoading
+        ? AppState.state.translations[AppState.state.currentLang]?.loading_text || 'Loading...'
+        : AppState.state.translations[AppState.state.currentLang]?.generate_button || 'Generate';
+    }
   },
 
   validateInput: (value, min, max) => {
@@ -142,17 +113,45 @@ const Helpers = {
 // معالجات الأحداث
 const EventHandlers = {
   handleTypeChange: () => {
+    if (!AppState.elements.typeSelector) return;
+    
     const type = AppState.elements.typeSelector.value;
-    AppState.elements.customOptions.style.display = type === 'custom' ? 'block' : 'none';
-    AppState.elements.pinOptions.style.display = type === 'pin' ? 'block' : 'none';
-    AppState.elements.strongOptions.style.display = type === 'strong' ? 'block' : 'none';
+    console.log('Password type changed to:', type);
+    
+    if (AppState.elements.customOptions) {
+      AppState.elements.customOptions.style.display = type === 'custom' ? 'block' : 'none';
+    }
+    if (AppState.elements.pinOptions) {
+      AppState.elements.pinOptions.style.display = type === 'pin' ? 'block' : 'none';
+    }
+    if (AppState.elements.strongOptions) {
+      AppState.elements.strongOptions.style.display = type === 'strong' ? 'block' : 'none';
+    }
   },
 
   handleGenerate: async () => {
-    if (AppState.state.isLoading) return;
+    if (AppState.state.isLoading || !AppState.elements.typeSelector || !AppState.elements.passwordField) return;
 
+    console.log('Generating password...');
+    
     const type = AppState.elements.typeSelector.value;
-    const length = parseInt(AppState.elements.lengthInput.value) || 12;
+    let length = 12;
+
+    try {
+      switch (type) {
+        case 'custom':
+          length = parseInt(AppState.elements.lengthInput?.value) || 12;
+          break;
+        case 'strong':
+          length = parseInt(AppState.elements.strongLength?.value) || 16;
+          break;
+        case 'pin':
+          length = parseInt(AppState.elements.pinLengthSelect?.value) || 4;
+          break;
+      }
+    } catch (e) {
+      console.error('Error parsing length:', e);
+    }
 
     if (type !== 'memorable' && !Helpers.validateInput(length, 4, 64)) {
       Helpers.showToast(
@@ -172,9 +171,9 @@ const EventHandlers = {
           endpoint = '/generate/strong';
           body = {
             length,
-            uppercase: AppState.elements.uppercaseCheckbox.checked,
-            numbers: AppState.elements.numbersCheckbox.checked,
-            symbols: AppState.elements.symbolsCheckbox.checked
+            uppercase: AppState.elements.uppercaseCheckbox?.checked || true,
+            numbers: AppState.elements.numbersCheckbox?.checked || true,
+            symbols: AppState.elements.symbolsCheckbox?.checked || true
           };
           break;
 
@@ -185,13 +184,13 @@ const EventHandlers = {
 
         case 'pin':
           endpoint = '/generate/pin';
-          body = { length: parseInt(AppState.elements.pinLengthSelect.value) };
+          body = { length };
           break;
 
         case 'custom':
           endpoint = '/generate/custom';
           body = {
-            characters: AppState.elements.customCharsInput.value,
+            characters: AppState.elements.customCharsInput?.value || '',
             length
           };
           break;
@@ -200,6 +199,8 @@ const EventHandlers = {
           throw new Error(AppState.state.translations[AppState.state.currentLang]?.error || 'Unsupported type');
       }
 
+      console.log('Sending request to:', endpoint, 'with body:', body);
+      
       const response = await fetch(`${Helpers.getAPIBaseURL()}${endpoint}`, {
         method: 'POST',
         headers: { 
@@ -210,15 +211,17 @@ const EventHandlers = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || AppState.state.translations[AppState.state.currentLang]?.error || 'Server error');
       }
 
       const data = await response.json();
-      AppState.elements.passwordField.value = data.password;
+      console.log('Received response:', data);
+      
+      AppState.elements.passwordField.value = data.password || '';
       Helpers.showToast(AppState.state.translations[AppState.state.currentLang]?.success || 'Password generated');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Generation error:', error);
       Helpers.showToast(error.message || AppState.state.translations[AppState.state.currentLang]?.error || 'Error occurred', true);
     } finally {
       Helpers.setLoading(false);
@@ -227,13 +230,14 @@ const EventHandlers = {
 
   handleCopy: async () => {
     try {
-      if (!AppState.elements.passwordField.value) {
+      if (!AppState.elements.passwordField?.value) {
         Helpers.showToast(AppState.state.translations[AppState.state.currentLang]?.no_password || 'No password to copy', true);
         return;
       }
       await navigator.clipboard.writeText(AppState.elements.passwordField.value);
       Helpers.showToast(AppState.state.translations[AppState.state.currentLang]?.copied || 'Copied!');
     } catch (err) {
+      console.error('Copy error:', err);
       Helpers.showToast(AppState.state.translations[AppState.state.currentLang]?.error || 'Copy failed', true);
     }
   },
@@ -255,8 +259,14 @@ const EventHandlers = {
       console.warn(`Unsupported language: ${lang}, defaulting to English`);
       lang = 'en';
     }
+    console.log('Changing language to:', lang);
     AppState.state.currentLang = lang;
     localStorage.setItem('lang', lang);
+    
+    // تغيير اتجاه الصفحة حسب اللغة
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    
     await TranslationService.loadTranslations(lang);
   }
 };
@@ -265,22 +275,22 @@ const EventHandlers = {
 const TranslationService = {
   loadTranslations: async (lang) => {
     try {
-      // 1. محاولة تحميل الترجمات من ملف JSON الخارجي
-      const response = await fetch(`/lang/${lang}.json`);
+      console.log(`Loading translations for ${lang}...`);
+      
+      const response = await fetch(`/lang/${lang}.json?t=${new Date().getTime()}`);
       
       if (response.ok) {
         AppState.state.translations[lang] = await response.json();
+        console.log(`Successfully loaded translations for ${lang}`);
       } else {
-        // 2. إذا فشل التحميل، استخدام الترجمات الافتراضية
-        console.warn(`Using default translations for ${lang}`);
+        console.warn(`Failed to load ${lang}.json, using defaults`);
         AppState.state.translations[lang] = AppState.defaultTranslations[lang];
       }
       
       UI.updateTextContent();
     } catch (err) {
       console.error('Translation error:', err);
-      // 3. في حالة الخطأ، استخدام الإنجليزية كحل أخير
-      AppState.state.translations[lang] = AppState.defaultTranslations.en;
+      AppState.state.translations[lang] = AppState.defaultTranslations[lang];
       UI.updateTextContent();
     }
   }
@@ -290,18 +300,19 @@ const TranslationService = {
 const UI = {
   updateTextContent: () => {
     const t = AppState.state.translations[AppState.state.currentLang] || AppState.defaultTranslations.en;
+    console.log('Updating UI with translations:', t);
 
     // تحديث جميع العناصر
-    Object.keys(t).forEach(key => {
+    for (const [key, value] of Object.entries(t)) {
       const element = AppState.elements[key];
       if (element) {
         if (element.tagName === 'INPUT' && element.type === 'text') {
-          element.placeholder = t[key] || '';
+          element.placeholder = value || '';
         } else if (element.textContent !== undefined) {
-          element.textContent = t[key] || '';
+          element.textContent = value || '';
         }
       }
-    });
+    }
 
     // تحديث خاص للعناصر التي تحتاج معالجة إضافية
     if (AppState.elements.pageTitle) {
@@ -309,36 +320,128 @@ const UI = {
     }
   },
 
-  initialize: async () => {
-    // التحقق من العناصر الأساسية
-    if (!AppState.elements.typeSelector || !AppState.elements.generateBtn) {
-      throw new Error('Essential elements are missing!');
+  initializeElements: () => {
+    AppState.elements = {
+      typeSelector: document.getElementById('type'),
+      generateBtn: document.getElementById('generate'),
+      copyBtn: document.getElementById('copy'),
+      passwordField: document.getElementById('password'),
+      lengthInput: document.getElementById('custom-length'),
+      strongLength: document.getElementById('strong-length'),
+      uppercaseCheckbox: document.getElementById('uppercase'),
+      numbersCheckbox: document.getElementById('numbers'),
+      symbolsCheckbox: document.getElementById('symbols'),
+      strongOptions: document.getElementById('strong-options'),
+      pinLengthSelect: document.getElementById('pin-length'),
+      customCharsInput: document.getElementById('custom-chars'),
+      customOptions: document.getElementById('custom-options'),
+      pinOptions: document.getElementById('pin-options'),
+      themeToggle: document.getElementById('theme-toggle'),
+      loadingIndicator: document.getElementById('loading'),
+      pageTitle: document.getElementById('page-title'),
+      title: document.getElementById('title'),
+      description: document.getElementById('description'),
+      passwordTypeLabel: document.getElementById('password-type-label'),
+      customOption: document.getElementById('custom-option'),
+      strongOption: document.getElementById('strong-option'),
+      memorableOption: document.getElementById('memorable-option'),
+      pinOption: document.getElementById('pin-option'),
+      passwordLengthLabel: document.getElementById('password-length-label'),
+      customCharsLabel: document.getElementById('custom-chars-label'),
+      passwordInput: document.getElementById('password'),
+      uppercaseLabel: document.getElementById('uppercase-label'),
+      numbersLabel: document.getElementById('numbers-label'),
+      symbolsLabel: document.getElementById('symbols-label'),
+      pinLengthLabel: document.getElementById('pin-length-label'),
+      themeIcon: document.getElementById('theme-icon'),
+      languageToggle: document.getElementById('language-toggle'),
+      langArButton: document.getElementById('language-ar'),
+      langEnButton: document.getElementById('language-en')
+    };
+  },
+
+  setupEventListeners: () => {
+    if (AppState.elements.typeSelector) {
+      AppState.elements.typeSelector.addEventListener('change', () => {
+        EventHandlers.handleTypeChange();
+      });
     }
 
-    document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
-    
-    // إعداد معالجي الأحداث
-    AppState.elements.typeSelector?.addEventListener('change', EventHandlers.handleTypeChange);
-    AppState.elements.generateBtn?.addEventListener('click', EventHandlers.handleGenerate);
-    AppState.elements.copyBtn?.addEventListener('click', EventHandlers.handleCopy);
-    AppState.elements.themeToggle?.addEventListener('click', EventHandlers.handleThemeToggle);
-    AppState.elements.langArButton?.addEventListener('click', () => EventHandlers.handleLanguageChange('ar'));
-    AppState.elements.langEnButton?.addEventListener('click', () => EventHandlers.handleLanguageChange('en'));
+    if (AppState.elements.generateBtn) {
+      AppState.elements.generateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        EventHandlers.handleGenerate();
+      });
+    }
 
-    // التهيئة الأولية
-    EventHandlers.handleTypeChange();
-    await TranslationService.loadTranslations(AppState.state.currentLang);
+    if (AppState.elements.copyBtn) {
+      AppState.elements.copyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        EventHandlers.handleCopy();
+      });
+    }
+
+    if (AppState.elements.themeToggle) {
+      AppState.elements.themeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        EventHandlers.handleThemeToggle();
+      });
+    }
+
+    if (AppState.elements.langArButton) {
+      AppState.elements.langArButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        EventHandlers.handleLanguageChange('ar');
+      });
+    }
+
+    if (AppState.elements.langEnButton) {
+      AppState.elements.langEnButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        EventHandlers.handleLanguageChange('en');
+      });
+    }
+  },
+
+  initialize: async () => {
+    console.log('Initializing application...');
+    
+    try {
+      // 1. تهيئة العناصر
+      this.initializeElements();
+      
+      // 2. التحقق من العناصر الأساسية
+      const essentialElements = ['typeSelector', 'generateBtn', 'passwordField'];
+      for (const element of essentialElements) {
+        if (!AppState.elements[element]) {
+          throw new Error(`Essential element ${element} is missing!`);
+        }
+      }
+      
+      console.log('All essential elements found:', AppState.elements);
+      
+      // 3. إعداد السمة الأولية
+      document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
+      
+      // 4. إعداد معالجات الأحداث
+      this.setupEventListeners();
+      
+      // 5. تهيئة اللغة
+      await TranslationService.loadTranslations(AppState.state.currentLang);
+      
+      // 6. تهيئة نوع كلمة المرور
+      EventHandlers.handleTypeChange();
+      
+      console.log('Application initialized successfully');
+    } catch (error) {
+      console.error('Initialization error:', error);
+      alert(`Initialization error: ${error.message}`);
+    }
   }
 };
 
-// بدء التطبيق
-try {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', UI.initialize);
-  } else {
-    UI.initialize();
-  }
-} catch (e) {
-  console.error('Fatal error:', e);
-  alert('Application failed to load. Please refresh the page.');
-}
+// بدء التطبيق بعد تحميل DOM
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM fully loaded, starting app...');
+  UI.initialize();
+});

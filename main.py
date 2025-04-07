@@ -1,45 +1,36 @@
-# python -m uvicorn main:app --reload
-
 import os
 import logging
 from pathlib import Path
-from backend.api import app  # استيراد app من ملف api.py
+from backend.api import app
+from fastapi import FastAPI
 
-# إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def check_directory_structure():
-    """التحقق من هيكل المجلدات الأساسية"""
-    required_dirs = [
-        Path(__file__).parent / "frontend",
-        Path(__file__).parent / "frontend/static",
-        Path(__file__).parent / "backend"
+def check_required_files():
+    """التحقق من وجود الملفات الأساسية"""
+    required_files = [
+        Path(__file__).parent / "frontend" / "index.html",
+        Path(__file__).parent / "frontend" / "lang" / "en.json",
+        Path(__file__).parent / "frontend" / "lang" / "ar.json"
     ]
     
-    for dir_path in required_dirs:
-        if not dir_path.exists():
-            logger.error(f"المجلد المطلوب غير موجود: {dir_path}")
-            return False
+    missing_files = [str(f) for f in required_files if not f.exists()]
+    if missing_files:
+        logger.error(f"Missing required files: {', '.join(missing_files)}")
+        return False
     return True
 
 if __name__ == "__main__":
-    try:
-        if not check_directory_structure():
-            raise RuntimeError("هيكل المجلدات غير صحيح!")
-        
-        logger.info("بدء تشغيل خادم FastAPI...")
-        
-        import uvicorn
-        uvicorn.run(
-            "backend.api:app",
-            host="0.0.0.0",
-            port=int(os.environ.get("PORT", 8000)),
-            reload=os.getenv("DEV_MODE", "True") == "True",
-            log_level="debug",
-            reload_dirs=["backend", "frontend"] if os.getenv("DEV_MODE") == "True" else None,
-            access_log=True
-        )
-    except Exception as e:
-        logger.critical(f"فشل تشغيل الخادم: {str(e)}")
-        raise
+    if not check_required_files():
+        raise RuntimeError("بعض الملفات الأساسية مفقودة. الرجاء التحقق من هيكل المجلدات.")
+    
+    import uvicorn
+    uvicorn.run(
+        "backend.api:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        reload=True,
+        log_level="info",
+        access_log=True
+    )
