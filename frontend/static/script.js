@@ -25,14 +25,11 @@ try {
     pinOption: document.getElementById('pin-option'),
     passwordLengthLabel: document.getElementById('password-length-label'),
     customCharsLabel: document.getElementById('custom-chars-label'),
-    generateBtn: document.getElementById('generate'),
     passwordInput: document.getElementById('password'),
-    copyBtn: document.getElementById('copy'),
     uppercaseLabel: document.getElementById('uppercase-label'),
     numbersLabel: document.getElementById('numbers-label'),
     symbolsLabel: document.getElementById('symbols-label'),
     pinLengthLabel: document.getElementById('pin-length-label'),
-    themeToggle: document.getElementById('theme-toggle'),
     themeIcon: document.getElementById('theme-icon'),
     languageToggle: document.getElementById('language-toggle')
   };
@@ -66,7 +63,9 @@ try {
       state.isLoading = isLoading;
       elements.generateBtn.disabled = isLoading;
       elements.loadingIndicator.style.display = isLoading ? 'block' : 'none';
-      elements.generateBtn.textContent = isLoading ? translations[state.currentLang]?.copying || 'Loading...' : translations[state.currentLang]?.generate || 'Generate';
+      elements.generateBtn.textContent = isLoading
+        ? translations[state.currentLang]?.copying || 'Loading...'
+        : translations[state.currentLang]?.generate || 'Generate';
     },
 
     validateInput: (value, min, max) => {
@@ -194,40 +193,39 @@ try {
 
   function updateTextContent() {
     const t = translations[state.currentLang] || {};
-  
+
     elements.pageTitle.textContent = t.page_title || 'Secure Password Generator';
     document.title = t.page_title || 'Secure Password Generator';
-  
+
     elements.title.textContent = t.title || 'Secure Password Generator';
     elements.description.textContent = t.description || 'Choose the password type and generate it easily and securely';
-  
+
     elements.themeToggle.textContent = t.theme_toggle || 'Toggle Theme';
     elements.themeIcon.className = t.theme_icon || 'fa fa-sun icon';
-  
+
     elements.passwordTypeLabel.textContent = t.password_type || 'Password Type:';
     elements.customOption.textContent = t.custom_option || 'Custom';
     elements.strongOption.textContent = t.strong_option || 'Strong';
     elements.memorableOption.textContent = t.memorable_option || 'Memorable';
     elements.pinOption.textContent = t.pin_option || 'PIN';
-  
+
     elements.passwordLengthLabel.textContent = t.password_length || 'Password Length:';
     elements.customCharsLabel.textContent = t.custom_chars || 'Enter custom characters:';
-  
+
     elements.generateBtn.textContent = t.generate_button || 'Generate Password';
     elements.generateBtn.dataset.loadingText = t.loading_text || 'Generating...';
-  
+
     elements.passwordInput.placeholder = t.password_placeholder || 'Password will appear here';
     elements.copyBtn.textContent = t.copy_button || 'Copy';
-  
+
     elements.uppercaseLabel.textContent = t.uppercase || 'Uppercase letters (A-Z)';
     elements.numbersLabel.textContent = t.numbers || 'Numbers (0-9)';
     elements.symbolsLabel.textContent = t.symbols || 'Special characters (!@#$%)';
-  
+
     elements.pinLengthLabel.textContent = t.pin_length || 'PIN Length:';
-  
+
     elements.languageToggle.textContent = t.language || 'Language';
   }
-  
 
   function init() {
     document.body.className = state.currentTheme === 'dark' ? 'dark-theme' : '';

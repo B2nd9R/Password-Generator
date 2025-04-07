@@ -40,10 +40,11 @@
         </select>
       </div>
 
+      <!-- خيارات مخصصة -->
       <div id="custom-options">
         <div class="control-group">
-          <label for="length" data-translate="password_length">طول كلمة المرور:</label>
-          <input type="number" id="length" min="4" max="32" value="12">
+          <label for="custom-length" data-translate="password_length">طول كلمة المرور:</label>
+          <input type="number" id="custom-length" min="4" max="32" value="12">
         </div>
 
         <div class="control-group">
@@ -52,10 +53,11 @@
         </div>
       </div>
 
+      <!-- خيارات قوية -->
       <div id="strong-options" style="display: none;">
         <div class="control-group">
-          <label for="length" data-translate="password_length">طول كلمة المرور:</label>
-          <input type="number" id="length" min="4" max="32" value="16">
+          <label for="strong-length" data-translate="password_length">طول كلمة المرور:</label>
+          <input type="number" id="strong-length" min="4" max="32" value="16">
         </div>
 
         <div class="control-group">
@@ -77,6 +79,7 @@
         </div>
       </div>
 
+      <!-- خيارات رمز PIN -->
       <div id="pin-options" style="display: none;">
         <div class="control-group">
           <label for="pin-length" data-translate="pin_length">طول رمز PIN:</label>
@@ -89,16 +92,20 @@
       </div>
     </div>
 
+    <!-- زر التوليد -->
     <button class="generate-btn" id="generate" data-translate="generate_button">إنشاء كلمة مرور</button>
 
+    <!-- مؤشر التحميل -->
     <div id="loading" class="loading-indicator" style="display: none;" data-translate="loading_text">جارٍ التوليد...</div>
 
+    <!-- عرض النتيجة -->
     <div class="result">
       <input type="text" id="password" readonly placeholder="ستظهر كلمة المرور هنا" data-translate="password_placeholder">
       <button class="copy-btn" id="copy" data-translate="copy_button">نسخ</button>
     </div>
   </div>
 
+  <!-- ربط ملف JavaScript -->
   <script src="/static/script.js"></script>
 </body>
 </html>
