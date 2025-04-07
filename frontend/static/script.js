@@ -31,7 +31,9 @@ try {
     symbolsLabel: document.getElementById('symbols-label'),
     pinLengthLabel: document.getElementById('pin-length-label'),
     themeIcon: document.getElementById('theme-icon'),
-    languageToggle: document.getElementById('language-toggle')
+    languageToggle: document.getElementById('language-toggle'),
+    langArButton: document.getElementById('language-ar'),
+    langEnButton: document.getElementById('language-en')
   };
 
   if (!elements.typeSelector || !elements.generateBtn) {
@@ -173,8 +175,8 @@ try {
       localStorage.setItem('theme', state.currentTheme);
     },
 
-    handleLanguageToggle: () => {
-      state.currentLang = state.currentLang === 'en' ? 'ar' : 'en';
+    handleLanguageChange: (lang) => {
+      state.currentLang = lang;
       localStorage.setItem('lang', state.currentLang);
       loadTranslations(state.currentLang);
     }
@@ -229,11 +231,16 @@ try {
 
   function init() {
     document.body.className = state.currentTheme === 'dark' ? 'dark-theme' : '';
+
     elements.typeSelector.addEventListener('change', handlers.handleTypeChange);
     elements.generateBtn.addEventListener('click', handlers.handleGenerate);
     elements.copyBtn.addEventListener('click', handlers.handleCopy);
     elements.themeToggle.addEventListener('click', handlers.handleThemeToggle);
-    elements.languageToggle.addEventListener('click', handlers.handleLanguageToggle);
+
+    if (elements.langArButton)
+      elements.langArButton.addEventListener('click', () => handlers.handleLanguageChange('ar'));
+    if (elements.langEnButton)
+      elements.langEnButton.addEventListener('click', () => handlers.handleLanguageChange('en'));
 
     handlers.handleTypeChange();
     loadTranslations(state.currentLang);
