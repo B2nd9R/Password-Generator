@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -102,6 +102,10 @@ def load_language(lang_code: str) -> dict:
         logger.error(f"Error loading language {lang_code}: {str(e)}")
         return {}
 
+# Dependency للحصول على اللغة
+async def get_language(request: Request):
+    return request.state.lang
+
 # نقاط النهاية
 @app.get("/", include_in_schema=False)
 async def serve_home(request: Request):
@@ -110,83 +114,95 @@ async def serve_home(request: Request):
         raise HTTPException(status_code=404, detail="Home page not found")
     return FileResponse(index_path)
 
-@app.post("/generate/strong", response_model=dict)
-async def generate_strong(request: StrongPasswordRequest, lang_request: Request):
+@app.post("/generate/strong")
+async def generate_strong(
+    request_data: StrongPasswordRequest,
+    request: Request
+):
     try:
-        validate_password_length(request.length)
+        validate_password_length(request_data.length)
         password = generate_secure_password(
-            length=request.length,
-            uppercase=request.uppercase,
-            numbers=request.numbers,
-            symbols=request.symbols
+            length=request_data.length,
+            uppercase=request_data.uppercase,
+            numbers=request_data.numbers,
+            symbols=request_data.symbols
         )
-        return {
+        return JSONResponse({
             "password": password,
             "status": "success",
-            "message": lang_request.state.lang.get("password_generated", "Password generated")
-        }
+            "message": request.state.lang.get("password_generated", "Password generated")
+        })
     except Exception as e:
         logger.error(f"Strong password error: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        return JSONResponse(
+            {"error": str(e), "status": "error"},
+            status_code=400
+        )
 
 @app.post("/generate/memorable")
-async def generate_memorable(request: MemorablePasswordRequest):
+async def generate_memorable(
+    request_data: MemorablePasswordRequest,
+    request: Request
+):
     try:
         password = generate_memorable_password(
-            num_words=request.num_words,
-            separator=request.separator
+            num_words=request_data.num_words,
+            separator=request_data.separator
         )
-        logger.info("تم توليد كلمة مرور سهلة التذكر")
         return JSONResponse({
             "password": password,
             "status": "success",
             "message": request.state.lang.get("password_generated", "Memorable password generated")
         })
     except Exception as e:
-        logger.error(f"خطأ في التوليد: {str(e)}")
+        logger.error(f"Memorable password error: {str(e)}")
         return JSONResponse(
             {"error": str(e), "status": "error"},
             status_code=400
         )
 
 @app.post("/generate/pin")
-async def generate_pin_code(request: PinRequest):
+async def generate_pin_code(
+    request_data: PinRequest,
+    request: Request
+):
     try:
-        if request.length not in [4, 6, 8]:
-            raise ValueError("يجب أن يكون طول الرمز 4 او 6 او 8 ارقام")
+        if request_data.length not in [4, 6, 8]:
+            raise ValueError("PIN length must be 4, 6 or 8 digits")
         
-        pin = generate_pin(length=request.length)
-        logger.info("تم توليد PIN")
+        pin = generate_pin(length=request_data.length)
         return JSONResponse({
             "password": pin,
             "status": "success",
             "message": request.state.lang.get("pin_generated", "PIN generated successfully")
         })
     except Exception as e:
-        logger.error(f"خطأ في التوليد: {str(e)}")
+        logger.error(f"PIN generation error: {str(e)}")
         return JSONResponse(
             {"error": str(e), "status": "error"},
             status_code=400
         )
 
 @app.post("/generate/custom")
-async def generate_custom(request: CustomPasswordRequest):
+async def generate_custom(
+    request_data: CustomPasswordRequest,
+    request: Request
+):
     try:
-        if len(request.characters) < 4:
-            raise ValueError("يجب إدخال 4 أحرف على الأقل")
+        if len(request_data.characters) < 4:
+            raise ValueError("At least 4 characters required")
         
         password = generate_custom_password(
-            characters=request.characters,
-            length=request.length
+            characters=request_data.characters,
+            length=request_data.length
         )
-        logger.info("تم توليد كلمة مرور مخصصة")
         return JSONResponse({
             "password": password,
             "status": "success",
             "message": request.state.lang.get("custom_password_generated", "Custom password generated")
         })
     except Exception as e:
-        logger.error(f"خطأ في التوليد: {str(e)}")
+        logger.error(f"Custom password error: {str(e)}")
         return JSONResponse(
             {"error": str(e), "status": "error"},
             status_code=400
@@ -215,4 +231,4 @@ def validate_password_length(length: int, min_len: int = 4, max_len: int = 64):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.api:app", host="0.0.0.0", port=8000, reload=True)
