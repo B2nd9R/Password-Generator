@@ -1,11 +1,11 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 from pathlib import Path
-import os
+import json
 import logging
 
 from backend.generators import (
@@ -39,10 +39,20 @@ BASE_DIR = Path(__file__).parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 STATIC_DIR = FRONTEND_DIR / "static"
 ASSETS_DIR = FRONTEND_DIR / "assets"
+LANG_DIR = FRONTEND_DIR / "lang"
 
 # خدمة الملفات الثابتة
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
+# تحميل ملفات اللغة
+def load_language(lang_code):
+    try:
+        with open(LANG_DIR / f"{lang_code}.json", "r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        logger.error(f"ملف اللغة {lang_code}.json غير موجود")
+        return {}
 
 # نماذج البيانات
 class StrongPasswordRequest(BaseModel):
@@ -62,14 +72,22 @@ class CustomPasswordRequest(BaseModel):
     characters: str
     length: int
 
+# النقطة الوسطى للتحقق من اللغة
+@app.middleware("http")
+async def add_language(request: Request, call_next):
+    lang_code = request.headers.get("Accept-Language", "en")  # افتراض اللغة الإنجليزية
+    request.state.lang = load_language(lang_code)
+    response = await call_next(request)
+    return response
+
 # نقاط النهاية
 @app.get("/")
-async def serve_home():
+async def serve_home(request: Request):
     index_path = FRONTEND_DIR / "index.html"
     if not index_path.exists():
         logger.error("ملف index.html غير موجود")
         return JSONResponse(
-            {"error": "File not found"},
+            {"error": request.state.lang.get("error", "File not found")},
             status_code=404
         )
     return FileResponse(index_path)
@@ -86,7 +104,8 @@ async def generate_strong(request: StrongPasswordRequest):
         logger.info(f"تم توليد كلمة مرور قوية")
         return JSONResponse({
             "password": password,
-            "status": "success"
+            "status": "success",
+            "message": request.state.lang.get("password_generated", "Strong password generated")
         })
     except Exception as e:
         logger.error(f"خطأ في التوليد: {str(e)}")
@@ -105,7 +124,8 @@ async def generate_memorable(request: MemorablePasswordRequest):
         logger.info(f"تم توليد كلمة مرور سهلة التذكر")
         return JSONResponse({
             "password": password,
-            "status": "success"
+            "status": "success",
+            "message": request.state.lang.get("password_generated", "Memorable password generated")
         })
     except Exception as e:
         logger.error(f"خطأ في التوليد: {str(e)}")
@@ -124,7 +144,8 @@ async def generate_pin_code(request: PinRequest):
         logger.info(f"تم توليد PIN")
         return JSONResponse({
             "password": pin,
-            "status": "success"
+            "status": "success",
+            "message": request.state.lang.get("pin_generated", "PIN generated successfully")
         })
     except Exception as e:
         logger.error(f"خطأ في التوليد: {str(e)}")
@@ -146,7 +167,8 @@ async def generate_custom(request: CustomPasswordRequest):
         logger.info(f"تم توليد كلمة مرور مخصصة")
         return JSONResponse({
             "password": password,
-            "status": "success"
+            "status": "success",
+            "message": request.state.lang.get("custom_password_generated", "Custom password generated")
         })
     except Exception as e:
         logger.error(f"خطأ في التوليد: {str(e)}")
