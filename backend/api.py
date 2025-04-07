@@ -8,6 +8,7 @@ from typing import Optional
 from pathlib import Path
 import json
 import logging
+import re
 
 from backend.generators import (
     generate_secure_password,
@@ -47,17 +48,50 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 app.mount("/lang", StaticFiles(directory=LANG_DIR), name="lang")
 
-
-# تحميل ملفات اللغة
+# تحميل ملفات اللغة (محدث)
 def load_language(lang_code):
     try:
-        with open(LANG_DIR / f"{lang_code}.json", "r", encoding="utf-8") as file:
+        # تنظيف كود اللغة من أي إضافات مثل ;q=0.5
+        clean_lang = re.split(r'[;,]', lang_code)[0].strip().lower()
+        
+        # اللغات المدعومة
+        supported_langs = ['en', 'ar']
+        
+        # استخدم الإنجليزية إذا لم تكن اللغة مدعومة
+        if clean_lang not in supported_langs:
+            clean_lang = 'en'
+        
+        lang_file = LANG_DIR / f"{clean_lang}.json"
+        
+        if not lang_file.exists():
+            logger.warning(f"ملف اللغة {clean_lang}.json غير موجود، استخدام الإنجليزية")
+            lang_file = LANG_DIR / "en.json"
+            
+            if not lang_file.exists():
+                logger.error("ملف اللغة الإنجليزية غير موجود!")
+                return {}
+
+        with open(lang_file, "r", encoding="utf-8") as file:
             return json.load(file)
-    except FileNotFoundError:
-        logger.error(f"ملف اللغة {lang_code}.json غير موجود")
+            
+    except Exception as e:
+        logger.error(f"خطأ في تحميل اللغة: {str(e)}")
         return {}
 
-# نماذج البيانات
+# Middleware للغة (محدث)
+@app.middleware("http")
+async def language_middleware(request: Request, call_next):
+    try:
+        lang_header = request.headers.get("Accept-Language", "en")
+        request.state.lang = load_language(lang_header)
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        logger.error(f"خطأ في middleware اللغة: {str(e)}")
+        request.state.lang = {}
+        return await call_next(request)
+
+# نماذج البيانات (تبقى كما هي)
 class StrongPasswordRequest(BaseModel):
     length: int = 8
     uppercase: bool = True
@@ -75,15 +109,7 @@ class CustomPasswordRequest(BaseModel):
     characters: str
     length: int
 
-# النقطة الوسطى للتحقق من اللغة
-@app.middleware("http")
-async def add_language(request: Request, call_next):
-    lang_code = request.headers.get("Accept-Language", "en")  # افتراض اللغة الإنجليزية
-    request.state.lang = load_language(lang_code)
-    response = await call_next(request)
-    return response
-
-# نقاط النهاية
+# نقاط النهاية (تبقى كما هي مع تعديلات طفيفة)
 @app.get("/")
 async def serve_home(request: Request):
     index_path = FRONTEND_DIR / "index.html"
@@ -104,7 +130,7 @@ async def generate_strong(request: StrongPasswordRequest):
             numbers=request.numbers,
             symbols=request.symbols
         )
-        logger.info(f"تم توليد كلمة مرور قوية")
+        logger.info("تم توليد كلمة مرور قوية")
         return JSONResponse({
             "password": password,
             "status": "success",
@@ -124,7 +150,7 @@ async def generate_memorable(request: MemorablePasswordRequest):
             num_words=request.num_words,
             separator=request.separator
         )
-        logger.info(f"تم توليد كلمة مرور سهلة التذكر")
+        logger.info("تم توليد كلمة مرور سهلة التذكر")
         return JSONResponse({
             "password": password,
             "status": "success",
@@ -144,7 +170,7 @@ async def generate_pin_code(request: PinRequest):
             raise ValueError("يجب أن يكون طول الرمز 4 او 6 او 8 ارقام")
         
         pin = generate_pin(length=request.length)
-        logger.info(f"تم توليد PIN")
+        logger.info("تم توليد PIN")
         return JSONResponse({
             "password": pin,
             "status": "success",
@@ -167,7 +193,7 @@ async def generate_custom(request: CustomPasswordRequest):
             characters=request.characters,
             length=request.length
         )
-        logger.info(f"تم توليد كلمة مرور مخصصة")
+        logger.info("تم توليد كلمة مرور مخصصة")
         return JSONResponse({
             "password": password,
             "status": "success",
@@ -180,13 +206,6 @@ async def generate_custom(request: CustomPasswordRequest):
             status_code=400
         )
 
-@app.middleware("http")
-async def add_language(request: Request, call_next):
-    lang_header = request.headers.get("Accept-Language", "en")
-    request.state.lang = load_language(lang_header)
-    response = await call_next(request)
-    return response
-
 @app.get("/check-files")
 async def check_files():
     return {
@@ -194,13 +213,18 @@ async def check_files():
         "lang_dir_exists": LANG_DIR.exists(),
         "ar_file_exists": (LANG_DIR / "ar.json").exists(),
         "en_file_exists": (LANG_DIR / "en.json").exists(),
-        "cwd": os.getcwd()
+        "cwd": os.getcwd(),
+        "available_languages": ["en", "ar"]
     }
 
-print("\n=== مسارات الملفات ===")
-print(f"دليل الجذر: {BASE_DIR}")
-print(f"يوجد مجلد frontend: {FRONTEND_DIR.exists()}")
-print(f"يوجد ملف index.html: {(FRONTEND_DIR/'index.html').exists()}")
-print(f"يوجد مجلد static: {(FRONTEND_DIR/'static').exists()}")
-print(f"يوجد مجلد assets: {ASSETS_DIR.exists()}")
-print(f"يوجد مجلد lang: {LANG_DIR.exists()}")
+# فحص المسارات عند التشغيل
+if __name__ == "__main__":
+    print("\n=== مسارات الملفات ===")
+    print(f"دليل الجذر: {BASE_DIR}")
+    print(f"يوجد مجلد frontend: {FRONTEND_DIR.exists()}")
+    print(f"يوجد ملف index.html: {(FRONTEND_DIR/'index.html').exists()}")
+    print(f"يوجد مجلد static: {(FRONTEND_DIR/'static').exists()}")
+    print(f"يوجد مجلد assets: {ASSETS_DIR.exists()}")
+    print(f"يوجد مجلد lang: {LANG_DIR.exists()}")
+    print(f"يوجد ملف ar.json: {(LANG_DIR/'ar.json').exists()}")
+    print(f"يوجد ملف en.json: {(LANG_DIR/'en.json').exists()}")
