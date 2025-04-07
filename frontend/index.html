@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <!-- تحسين معلومات الصفحة -->
+  <!-- تحسين معلومات الرابط عند المشاركة -->
   <meta property="og:title" content="Password Generator - أداة توليد كلمات مرور قوية" />
   <meta property="og:description" content="أنشئ كلمات مرور قوية وآمنة بضغطة زر!" />
   <meta property="og:url" content="https://password-generator-vm7k.onrender.com/" />
@@ -37,7 +37,7 @@
     </div>
   </div>
   -->
-  
+
   <!-- البقية تم تحديثها مع الحفاظ على الهيكل -->
   <div class="language-switcher">
     <button class="button glow-on-hover" id="language-ar" onclick="changeLanguage('ar')">
@@ -79,8 +79,11 @@
 
         <div class="control-group pop-in">
           <label for="custom-chars" data-translate="custom_chars" class="input-label">أدخل الحروف المخصصة:</label>
-          <input type="text" id="custom-chars" placeholder="مثال: abc123!@#" class="modern-input">
-        </div>
+          <div class="input-wrapper">
+            <input type="text" id="custom-chars" data-translate="custom_chars_placeholder" 
+                   placeholder="      مثال: abc123!@#" class="modern-input">
+            <span class="input-icon"><i class="fas fa-keyboard"></i></span>
+          </div>
       </div>
 
       <!-- خيارات قوية مع تحسينات -->

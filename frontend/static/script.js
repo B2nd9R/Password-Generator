@@ -149,7 +149,7 @@ const ApiService = {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || 'Server error');
+        throw new Error(error.message || 'يجب ادخال اربع احرف على الاقل لكي يتم توليد كلمة مرور');
       }
 
       return await response.json();
