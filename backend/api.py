@@ -19,22 +19,19 @@ from backend.generators import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Password Generator API", version="1.1.0")
+app = FastAPI(title="Password Generator API", version="1.2.0")
 
 # إعداد CORS الآمن
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://password-generator-vm7k.onrender.com",
-        "http://localhost:8000",
-        "http://localhost:3000"
-    ],
+    allow_origins=["*"],  # للتطوير فقط - حدد النطاقات في الإنتاج
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Language"]
 )
 
-# المسارات الصحيحة للاستضافة على Render
+# المسارات الصحيحة
 BASE_DIR = Path(__file__).parent.parent
 STATIC_DIR = BASE_DIR / "frontend" / "static"
 LANG_DIR = BASE_DIR / "frontend" / "lang"
@@ -63,7 +60,7 @@ class CustomPasswordRequest(BaseModel):
     characters: str
     length: int
 
-# Middleware للغة المحسّن
+# Middleware للغة
 @app.middleware("http")
 async def language_middleware(request: Request, call_next):
     try:
@@ -88,12 +85,15 @@ async def language_middleware(request: Request, call_next):
             status_code=500
         )
 
-# نقاط النهاية المحسنة
-@app.post("/generate/strong")
-async def generate_strong(request_data: StrongPasswordRequest, request: Request):
+# نقاط النهاية الرئيسية
+@app.post("/api/generate/strong")
+async def api_generate_strong(request_data: StrongPasswordRequest, request: Request):
     try:
         if not (4 <= request_data.length <= 64):
-            raise HTTPException(status_code=400, detail=request.state.translations.get("lengthError", "Invalid length"))
+            raise HTTPException(
+                status_code=400,
+                detail=request.state.translations.get("lengthError", "Invalid length (4-64 characters)")
+            )
         
         password = generate_secure_password(
             length=request_data.length,
@@ -102,30 +102,104 @@ async def generate_strong(request_data: StrongPasswordRequest, request: Request)
             symbols=request_data.symbols
         )
         
-        return JSONResponse({
+        return {
             "password": password,
-            "message": request.state.translations.get("success", "Password generated")
-        })
+            "message": request.state.translations.get("success", "Password generated successfully")
+        }
     
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        return JSONResponse(
-            {"error": request.state.translations.get("error", "Operation failed")},
-            status_code=400
+        logger.error(f"Strong password generation error: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=request.state.translations.get("error", "Error generating password")
         )
 
-# نقاط النهاية الأخرى بنفس النمط...
+@app.post("/api/generate/memorable")
+async def api_generate_memorable(request_data: MemorablePasswordRequest, request: Request):
+    try:
+        password = generate_memorable_password(
+            num_words=request_data.num_words,
+            separator=request_data.separator
+        )
+        return {
+            "password": password,
+            "message": request.state.translations.get("success", "Memorable password generated")
+        }
+    except Exception as e:
+        logger.error(f"Memorable password error: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=request.state.translations.get("error", "Error generating memorable password")
+        )
 
+@app.post("/api/generate/pin")
+async def api_generate_pin(request_data: PinRequest, request: Request):
+    try:
+        if request_data.length not in [4, 6, 8]:
+            raise HTTPException(
+                status_code=400,
+                detail=request.state.translations.get("lengthError", "PIN length must be 4, 6 or 8 digits")
+            )
+        
+        pin = generate_pin(length=request_data.length)
+        return {
+            "password": pin,
+            "message": request.state.translations.get("success", "PIN generated successfully")
+        }
+    except Exception as e:
+        logger.error(f"PIN generation error: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=request.state.translations.get("error", "Error generating PIN")
+        )
+
+@app.post("/api/generate/custom")
+async def api_generate_custom(request_data: CustomPasswordRequest, request: Request):
+    try:
+        if len(request_data.characters) < 4:
+            raise HTTPException(
+                status_code=400,
+                detail=request.state.translations.get("lengthError", "At least 4 characters required")
+            )
+        
+        password = generate_custom_password(
+            characters=request_data.characters,
+            length=request_data.length
+        )
+        return {
+            "password": password,
+            "message": request.state.translations.get("success", "Custom password generated")
+        }
+    except Exception as e:
+        logger.error(f"Custom password error: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=request.state.translations.get("error", "Error generating custom password")
+        )
+
+# نقاط نهاية الخدمة
+@app.get("/api/lang/{lang}.json")
+async def api_get_translations(lang: str):
+    lang_file = LANG_DIR / f"{lang}.json"
+    if not lang_file.exists():
+        lang_file = LANG_DIR / "en.json"
+    return FileResponse(lang_file)
+
+@app.get("/api/health")
+async def api_health_check():
+    return {"status": "healthy", "version": "1.2.0"}
+
+@app.get("/api/check-connection")
+async def api_check_connection():
+    return {"status": "connected", "service": "Password Generator API"}
+
+# نقطة النهاية للواجهة الأمامية
 @app.get("/", include_in_schema=False)
 async def serve_frontend():
     index_path = BASE_DIR / "frontend" / "index.html"
     if not index_path.exists():
         raise HTTPException(status_code=404, detail="Frontend not found")
     return FileResponse(index_path)
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "version": "1.1.2"}
 
 if __name__ == "__main__":
     import uvicorn

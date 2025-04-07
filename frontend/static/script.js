@@ -1,22 +1,20 @@
 /**
  * حالة التطبيق والترجمات
- * يحتوي على جميع الحالات والإعدادات الأساسية للتطبيق
  */
 const AppState = {
-  elements: null, // سيتم تعبئته بعناصر DOM عند التهيئة
+  elements: null,
   
   state: {
-    isLoading: false, // حالة التحميل
-    currentTheme: localStorage.getItem('theme') || 'light', // السمة الحالية
-    currentLang: localStorage.getItem('lang') || 'ar', // اللغة الحالية
-    alertClosed: localStorage.getItem('alertClosed') === 'true', // حالة التنبيه
-    translations: { // تخزين الترجمات
+    isLoading: false,
+    currentTheme: localStorage.getItem('theme') || 'light',
+    currentLang: localStorage.getItem('lang') || 'ar',
+    alertClosed: localStorage.getItem('alertClosed') === 'true',
+    translations: {
       en: {},
       ar: {}
     }
   },
 
-  // الترجمات الافتراضية في حالة عدم توفر ملفات الترجمة
   defaultTranslations: {
     en: {
       page_title: "Secure Password Generator",
@@ -83,12 +81,8 @@ const AppState = {
 
 /**
  * الدوال المساعدة
- * تحتوي على وظائف عامة تستخدم في مختلف أجزاء التطبيق
  */
 const Helpers = {
-  /**
-   * عرض رسالة toast للمستخدم
-   */
   showToast(message, isError = false) {
     try {
       const toast = document.createElement('div');
@@ -101,9 +95,6 @@ const Helpers = {
     }
   },
 
-  /**
-   * تعيين حالة التحميل
-   */
   setLoading(isLoading) {
     AppState.state.isLoading = isLoading;
     if (AppState.elements.generateBtn) {
@@ -117,17 +108,11 @@ const Helpers = {
     }
   },
 
-  /**
-   * التحقق من صحة المدخلات الرقمية
-   */
   validateInput(value, min, max) {
     const num = parseInt(value);
     return !isNaN(num) && num >= min && num <= max;
   },
 
-  /**
-   * إغلاق تنبيه الخدمة
-   */
   closeAlert() {
     if (AppState.elements.serviceAlert) {
       AppState.elements.serviceAlert.classList.add('hidden');
@@ -142,25 +127,23 @@ const Helpers = {
 
 /**
  * خدمة API
- * مسؤولة عن جميع الاتصالات مع الخادم
  */
 const ApiService = {
-  /**
-   * إنشاء كلمة مرور
-   */
-  async generatePassword(type, body) {
+  async request(endpoint, method = 'GET', body = null) {
     try {
-      // استخدم مسارًا نسبيًا بدلاً من المسار الكامل
-      const endpoint = `/api/generate/${type}`;
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 
+      const options = {
+        method,
+        headers: {
           'Content-Type': 'application/json',
           'Accept-Language': AppState.state.currentLang
-        },
-        body: JSON.stringify(body)
-      });
+        }
+      };
+
+      if (body) {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(endpoint, options);
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
@@ -174,29 +157,24 @@ const ApiService = {
     }
   },
 
-  /**
-   * تحميل الترجمات
-   */
+  async generatePassword(type, body) {
+    return this.request(`/api/generate/${type}`, 'POST', body);
+  },
+
   async loadTranslations(lang) {
-    try {
-      // استخدم مسارًا نسبيًا لملفات الترجمة
-      const response = await fetch(`/api/lang/${lang}.json`);
-      return response.ok ? await response.json() : AppState.defaultTranslations[lang];
-    } catch (error) {
-      console.error('Translation load error:', error);
-      return AppState.defaultTranslations[lang];
-    }
+    const data = await this.request(`/api/lang/${lang}.json`);
+    return data;
+  },
+
+  async checkConnection() {
+    return this.request('/api/check-connection');
   }
 };
 
 /**
  * معالجات الأحداث
- * تحتوي على جميع الدوال المسؤولة عن معالجة أحداث المستخدم
  */
 const EventHandlers = {
-  /**
-   * معالجة تغيير نوع كلمة المرور
-   */
   handleTypeChange() {
     const type = AppState.elements.typeSelector.value;
     const options = {
@@ -210,21 +188,17 @@ const EventHandlers = {
     });
   },
 
-  /**
-   * معالجة إنشاء كلمة المرور
-   */
   async handleGenerate() {
     if (AppState.state.isLoading) return;
 
     const type = AppState.elements.typeSelector.value;
-    let length, body;
+    let body = {};
 
     try {
       switch (type) {
         case 'strong':
-          length = parseInt(AppState.elements.strongLength.value) || 16;
           body = {
-            length,
+            length: parseInt(AppState.elements.strongLength.value) || 16,
             uppercase: AppState.elements.uppercaseCheckbox.checked,
             numbers: AppState.elements.numbersCheckbox.checked,
             symbols: AppState.elements.symbolsCheckbox.checked
@@ -236,15 +210,13 @@ const EventHandlers = {
           break;
 
         case 'pin':
-          length = parseInt(AppState.elements.pinLengthSelect.value) || 4;
-          body = { length };
+          body = { length: parseInt(AppState.elements.pinLengthSelect.value) || 4 };
           break;
 
         case 'custom':
-          length = parseInt(AppState.elements.lengthInput.value) || 12;
           body = {
-            characters: AppState.elements.customCharsInput.value,
-            length
+            length: parseInt(AppState.elements.lengthInput.value) || 12,
+            characters: AppState.elements.customCharsInput.value
           };
           break;
 
@@ -252,7 +224,7 @@ const EventHandlers = {
           throw new Error('Unsupported password type');
       }
 
-      if (type !== 'memorable' && !Helpers.validateInput(length, 4, 64)) {
+      if (type !== 'memorable' && !Helpers.validateInput(body.length, 4, 64)) {
         throw new Error(AppState.state.translations[AppState.state.currentLang]?.lengthError || 'Invalid length');
       }
 
@@ -269,9 +241,6 @@ const EventHandlers = {
     }
   },
 
-  /**
-   * معالجة نسخ كلمة المرور
-   */
   async handleCopy() {
     try {
       if (!AppState.elements.passwordField.value) {
@@ -285,9 +254,6 @@ const EventHandlers = {
     }
   },
 
-  /**
-   * تبديل السمة بين الفاتح والداكن
-   */
   handleThemeToggle() {
     AppState.state.currentTheme = AppState.state.currentTheme === 'light' ? 'dark' : 'light';
     document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
@@ -300,9 +266,6 @@ const EventHandlers = {
     }
   },
 
-  /**
-   * تغيير لغة التطبيق
-   */
   async handleLanguageChange(lang) {
     try {
       AppState.state.currentLang = lang;
@@ -317,12 +280,11 @@ const EventHandlers = {
       Helpers.showToast(`Language changed to ${lang === 'ar' ? 'Arabic' : 'English'}`);
     } catch (error) {
       console.error('Language change error:', error);
+      AppState.state.translations[lang] = AppState.defaultTranslations[lang];
+      UI.updateTextContent();
     }
   },
 
-  /**
-   * إغلاق تنبيه الخدمة
-   */
   handleCloseAlert() {
     Helpers.closeAlert();
   }
@@ -330,12 +292,8 @@ const EventHandlers = {
 
 /**
  * واجهة المستخدم
- * مسؤولة عن إدارة عناصر DOM وتفاعلات الواجهة
  */
 const UI = {
-  /**
-   * تهيئة عناصر DOM
-   */
   initializeElements() {
     AppState.elements = {
       typeSelector: document.getElementById('type'),
@@ -365,9 +323,6 @@ const UI = {
     };
   },
 
-  /**
-   * تحديث النصوص حسب اللغة الحالية
-   */
   updateTextContent() {
     const lang = AppState.state.currentLang;
     const t = AppState.state.translations[lang] || AppState.defaultTranslations[lang];
@@ -405,9 +360,6 @@ const UI = {
     });
   },
 
-  /**
-   * إعداد معالجي الأحداث
-   */
   setupEventListeners() {
     const addEventListener = (element, event, handler) => {
       if (element) element.addEventListener(event, handler);
@@ -440,13 +392,14 @@ const UI = {
     });
   },
 
-  /**
-   * تهيئة التطبيق
-   */
   async initialize() {
     try {
       this.initializeElements();
       this.setupEventListeners();
+      
+      // التحقق من اتصال API
+      const connection = await ApiService.checkConnection();
+      console.log('API Connection:', connection);
       
       // تطبيق السمة المختارة
       document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
@@ -464,8 +417,7 @@ const UI = {
       }
       
       // تحميل الترجمات وتحديث الواجهة
-      AppState.state.translations[AppState.state.currentLang] = await ApiService.loadTranslations(AppState.state.currentLang);
-      this.updateTextContent();
+      await EventHandlers.handleLanguageChange(AppState.state.currentLang);
       
       // تحديث خيارات نوع كلمة المرور
       EventHandlers.handleTypeChange();
