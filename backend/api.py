@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -180,16 +181,21 @@ async def generate_custom(request: CustomPasswordRequest):
         )
 
 @app.middleware("http")
-async def check_static_files(request: Request, call_next):
-    if request.url.path.startswith("/static/"):
-        file_path = STATIC_DIR / request.url.path[8:]
-        if not file_path.exists():
-            logger.error(f"ملف غير موجود: {file_path}")
-            return JSONResponse(
-                {"error": "File not found"},
-                status_code=404
-            )
-    return await call_next(request)
+async def add_language(request: Request, call_next):
+    lang_header = request.headers.get("Accept-Language", "en")
+    request.state.lang = load_language(lang_header)
+    response = await call_next(request)
+    return response
+
+@app.get("/check-files")
+async def check_files():
+    return {
+        "frontend_dir": str(FRONTEND_DIR),
+        "lang_dir_exists": LANG_DIR.exists(),
+        "ar_file_exists": (LANG_DIR / "ar.json").exists(),
+        "en_file_exists": (LANG_DIR / "en.json").exists(),
+        "cwd": os.getcwd()
+    }
 
 print("\n=== مسارات الملفات ===")
 print(f"دليل الجذر: {BASE_DIR}")
