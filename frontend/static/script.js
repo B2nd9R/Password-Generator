@@ -8,6 +8,7 @@ try {
       uppercaseCheckbox: document.getElementById('uppercase'),
       numbersCheckbox: document.getElementById('numbers'),
       symbolsCheckbox: document.getElementById('symbols'),
+      strongOptions: document.getElementById('strong-options'),
       pinLengthSelect: document.getElementById('pin-length'),
       customCharsInput: document.getElementById('custom-chars'),
       customOptions: document.getElementById('custom-options'),
@@ -52,12 +53,13 @@ try {
     };
   
     const handlers = {
-      handleTypeChange: () => {
-        const type = elements.typeSelector.value;
-        elements.customOptions.style.display = type === 'custom' ? 'block' : 'none';
-        elements.pinOptions.style.display = type === 'pin' ? 'block' : 'none';
-        elements.strongOptions.style.display = type === 'strong' ? 'block' : 'none';
-      },
+        handleTypeChange: () => {
+            const type = elements.typeSelector.value;
+            elements.customOptions.style.display = type === 'custom' ? 'block' : 'none';
+            elements.pinOptions.style.display = type === 'pin' ? 'block' : 'none';
+            elements.strongOptions.style.display = type === 'strong' ? 'block' : 'none';
+          },
+          
   
       handleGenerate: async () => {
         if (state.isLoading) return;
