@@ -787,6 +787,115 @@ select:focus, input[type="number"]:focus {
   opacity: 1;
 }
 
+/* ====================================== */
+/* أنماط مؤشر قوة كلمة المرور */
+/* ====================================== */
+
+.strength-indicator {
+  margin-top: 1.5rem;
+  background: var(--surface-secondary);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.strength-meter-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.strength-meter {
+  flex: 1;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 4px;
+  background: var(--surface-color);
+  overflow: hidden;
+}
+
+.strength-meter::-webkit-progress-bar {
+  background: var(--surface-color);
+}
+
+.strength-meter::-webkit-progress-value {
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.strength-meter.strength-weak::-webkit-progress-value {
+  background: var(--error-500);
+}
+
+.strength-meter.strength-medium::-webkit-progress-value {
+  background: var(--warning-500);
+}
+
+.strength-meter.strength-strong::-webkit-progress-value {
+  background: var(--success-500);
+}
+
+.strength-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+.strength-meter.strength-weak + .strength-text {
+  color: var(--error-500);
+}
+
+.strength-meter.strength-medium + .strength-text {
+  color: var(--warning-500);
+}
+
+.strength-meter.strength-strong + .strength-text {
+  color: var(--success-500);
+}
+
+.strength-suggestions {
+  list-style: none;
+  padding-right: 1rem;
+  margin-top: 0.75rem;
+}
+
+.strength-suggestions li {
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.strength-suggestions li::before {
+  content: '•';
+  color: var(--warning-500);
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* دعم الوضع الداكن */
+.dark-theme .strength-indicator {
+  background: var(--surface-secondary);
+  border-color: var(--border-medium);
+}
+
+.dark-theme .strength-meter {
+  background: var(--neutral-800);
+}
+
+.dark-theme .strength-meter::-webkit-progress-bar {
+  background: var(--neutral-800);
+}
+
+.dark-theme .strength-suggestions li {
+  color: var(--neutral-400);
+}
+
 /* التصميم المتجاوب */
 @media (max-width: 640px) {
   .container {

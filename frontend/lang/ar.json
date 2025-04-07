@@ -30,5 +30,14 @@
   "language_en": "الإنجليزية",
   "alert_title": "تنبيه مهم!",
   "alert_message": "نعتذر عن الإزعاج، الخدمة غير متاحة حاليًا بسبب أعمال الصيانة",
-  "alert_contact": "تواصل مع الدعم"
+  "alert_contact": "تواصل مع الدعم",
+  "password_strength_weak": "ضعيفة",
+  "password_strength_medium": "متوسطة",
+  "password_strength_strong": "قوية",
+  "password_strength_suggestion_length_short": "كلمة المرور قصيرة جداً (8 أحرف على الأقل)",
+  "password_strength_suggestion_length_medium": "يفضل استخدام 12 حرفاً أو أكثر",
+  "password_strength_suggestion_case": "امزج بين الأحرف الكبيرة والصغيرة",
+  "password_strength_suggestion_numbers": "أضف أرقاماً لزيادة القوة",
+  "password_strength_suggestion_special": "أضف رموزاً خاصة (!@#$%)",
+  "password_strength_error": "خطأ في تحليل قوة كلمة المرور"
 }

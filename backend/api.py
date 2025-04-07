@@ -1,4 +1,5 @@
 import os
+import re
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -59,6 +60,14 @@ class PinRequest(BaseModel):
 class CustomPasswordRequest(BaseModel):
     characters: str
     length: int
+
+class PasswordStrengthRequest(BaseModel):
+    password: str
+
+class PasswordStrengthResponse(BaseModel):
+    score: int
+    strength: str  # weak, medium, strong
+    suggestions: list[str]
 
 # Middleware للغة
 @app.middleware("http")
@@ -177,6 +186,91 @@ async def api_generate_custom(request_data: CustomPasswordRequest, request: Requ
             detail=request.state.translations.get("error", "Error generating custom password")
         )
 
+@app.post("/api/analyze-strength", response_model=PasswordStrengthResponse)
+async def api_analyze_strength(request_data: PasswordStrengthRequest, request: Request):
+    """
+    تحليل قوة كلمة المرور وإرجاع النتائج مع اقتراحات التحسين
+    """
+    try:
+        password = request_data.password
+        
+        # 1. التحقق من طول كلمة المرور
+        suggestions = []
+        score = 0
+        
+        # الطول
+        if len(password) < 5:
+            score += 1
+            suggestions.append(request.state.translations.get(
+                "password_strength_suggestion_length_short",
+                "Use at least 8 characters"
+            ))
+        elif len(password) < 8:
+            score += 2
+            suggestions.append(request.state.translations.get(
+                "password_strength_suggestion_length_medium",
+                "Consider using 12+ characters for better security"
+            ))
+        elif len(password) < 12:
+            score += 3
+        else:
+            score += 4
+
+        # 2. التحقق من وجود أحرف كبيرة وصغيرة
+        has_lower = any(c.islower() for c in password)
+        has_upper = any(c.isupper() for c in password)
+        if has_lower and has_upper:
+            score += 1
+        else:
+            suggestions.append(request.state.translations.get(
+                "password_strength_suggestion_case",
+                "Mix uppercase and lowercase letters"
+            ))
+
+        # 3. التحقق من وجود أرقام
+        has_digit = any(c.isdigit() for c in password)
+        if has_digit:
+            score += 1
+        else:
+            suggestions.append(request.state.translations.get(
+                "password_strength_suggestion_numbers",
+                "Add numbers to increase complexity"
+            ))
+
+        # 4. التحقق من وجود رموز خاصة
+        has_special = bool(re.search(r'[^a-zA-Z0-9]', password))
+        if has_special:
+            score += 1
+        else:
+            suggestions.append(request.state.translations.get(
+                "password_strength_suggestion_special",
+                "Add special characters (!@#$%)"
+            ))
+
+        # تحديد مستوى القوة
+        if score < 3:
+            strength = "weak"
+        elif score < 5:
+            strength = "medium"
+        else:
+            strength = "strong"
+
+        return {
+            "score": score,
+            "strength": strength,
+            "suggestions": suggestions
+        }
+
+    except Exception as e:
+        logger.error(f"Password strength analysis error: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=request.state.translations.get(
+                "password_strength_error",
+                "Error analyzing password strength"
+            )
+        )
+    
 # نقاط نهاية الخدمة
 @app.get("/api/lang/{lang}.json")
 async def api_get_translations(lang: str):

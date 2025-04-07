@@ -45,7 +45,10 @@ const AppState = {
       alert_title: "Important Notice!",
       alert_message: "We apologize for the inconvenience, the service is currently unavailable due to maintenance.",
       alert_contact: "Contact Support",
-      language_changed: "Language changed to English"
+      language_changed: "Language changed to English",
+      passwordStrength_weak: "Weak",
+      passwordStrength_medium: "Medium",
+      passwordStrength_strong: "Strong"
     },
     ar: {
       page_title: "مولد كلمات مرور آمنة",
@@ -76,7 +79,10 @@ const AppState = {
       alert_title: "تنبيه مهم!",
       alert_message: "نعتذر عن الإزعاج، الخدمة غير متاحة حاليًا بسبب أعمال الصيانة",
       alert_contact: "تواصل مع الدعم",
-      language_changed: "تم تغيير اللغة إلى العربية"
+      language_changed: "تم تغيير اللغة إلى العربية",
+      passwordStrength_weak: "ضعيفة",
+      passwordStrength_medium: "متوسطة",
+      passwordStrength_strong: "قوية"
     }
   }
 };
@@ -124,6 +130,61 @@ const Helpers = {
         localStorage.setItem('alertClosed', 'true');
       }, 300);
     }
+  },
+
+  /**
+   * تحليل قوة كلمة المرور
+   */
+  analyzePasswordStrength(password) {
+    let score = 0;
+    const suggestions = [];
+    const lang = AppState.state.currentLang;
+    
+    if (!password) return {
+      score: 0,
+      strength: 'empty',
+      suggestions: []
+    };
+    
+    if (password.length < 5) {
+      score += 1;
+      suggestions.push(lang === 'ar' ? 'كلمة المرور قصيرة جداً (5 أحرف على الأقل)' : 'Password too short (min 5 chars)');
+    } 
+    else if (password.length < 8) {
+      score += 2;
+      suggestions.push(lang === 'ar' ? 'يفضل استخدام 8 أحرف على الأقل' : 'Consider using at least 8 characters');
+    }
+    else if (password.length < 12) score += 3;
+    else score += 4;
+
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    if (hasLower && hasUpper) {
+      score += 1;
+    } else {
+      suggestions.push(lang === 'ar' ? 'امزج بين الأحرف الكبيرة والصغيرة' : 'Mix uppercase and lowercase letters');
+    }
+
+    const hasNumber = /\d/.test(password);
+    if (hasNumber) {
+      score += 1;
+    } else {
+      suggestions.push(lang === 'ar' ? 'أضف أرقاماً لزيادة الأمان' : 'Add numbers for better security');
+    }
+
+    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+    if (hasSpecial) {
+      score += 1;
+    } else {
+      suggestions.push(lang === 'ar' ? 'إضافة رموز خاصة (!@#$%)' : 'Add special characters (!@#$%)');
+    }
+
+    let strength;
+    if (score < 3) strength = 'weak';
+    else if (score < 5) strength = 'medium';
+    else strength = 'strong';
+
+    return { score, strength, suggestions };
   }
 };
 
@@ -242,6 +303,7 @@ const EventHandlers = {
       const data = await ApiService.generatePassword(type, body);
       
       AppState.elements.passwordField.value = data.password;
+      UI.updatePasswordStrength(data.password);
       Helpers.showToast(data.message || AppState.state.translations[AppState.state.currentLang]?.success);
     } catch (error) {
       console.error('Generation error:', error);
@@ -284,13 +346,15 @@ const EventHandlers = {
       document.documentElement.lang = lang;
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
       
-      // تحميل الترجمات أولاً
       AppState.state.translations[lang] = await ApiService.loadTranslations(lang);
       
-      // تحديث جميع عناصر الواجهة
       UI.updateTextContent();
       
-      // عرض رسالة باللغة المحددة
+      // تحديث قوة كلمة المرور إذا كانت موجودة
+      if (AppState.elements.passwordField) {
+        UI.updatePasswordStrength(AppState.elements.passwordField.value);
+      }
+      
       Helpers.showToast(AppState.state.translations[lang]?.language_changed || 
         `Language changed to ${lang === 'ar' ? 'Arabic' : 'English'}`);
     } catch (error) {
@@ -352,7 +416,13 @@ const UI = {
       pinLengthSelect: document.getElementById('pin-length'),
       customCharsInput: document.getElementById('custom-chars'),
       customOptions: document.getElementById('custom-options'),
-      pinOptions: document.getElementById('pin-options')
+      pinOptions: document.getElementById('pin-options'),
+      
+      // عناصر قوة كلمة المرور
+      passwordStrengthContainer: document.getElementById('password-strength-container'),
+      passwordStrengthMeter: document.getElementById('password-strength-meter'),
+      passwordStrengthText: document.getElementById('password-strength-text'),
+      passwordStrengthSuggestions: document.getElementById('password-strength-suggestions')
     };
   },
 
@@ -360,10 +430,8 @@ const UI = {
     const lang = AppState.state.currentLang;
     const t = AppState.state.translations[lang] || AppState.defaultTranslations[lang];
     
-    // تحديث عنوان الصفحة
     document.title = t.page_title || document.title;
     
-    // تحديث جميع العناصر التي تحتوي على data-translate
     document.querySelectorAll('[data-translate]').forEach(element => {
       const key = element.getAttribute('data-translate');
       if (t[key]) {
@@ -371,7 +439,6 @@ const UI = {
       }
     });
     
-    // تحديث عناصر خاصة
     const elementsToUpdate = {
       'title': AppState.elements.title,
       'description': AppState.elements.description,
@@ -406,6 +473,35 @@ const UI = {
     });
   },
 
+  /**
+   * تحديث عرض قوة كلمة المرور
+   */
+  updatePasswordStrength(password) {
+    if (!AppState.elements.passwordField) return;
+    
+    const strengthContainer = AppState.elements.passwordStrengthContainer;
+    const strengthMeter = AppState.elements.passwordStrengthMeter;
+    const strengthText = AppState.elements.passwordStrengthText;
+    const strengthSuggestions = AppState.elements.passwordStrengthSuggestions;
+    
+    if (!strengthContainer || !strengthMeter || !strengthText) return;
+    
+    const { score, strength, suggestions } = Helpers.analyzePasswordStrength(password);
+    
+    strengthMeter.value = score;
+    strengthMeter.className = `strength-${strength}`;
+    
+    const t = AppState.state.translations[AppState.state.currentLang] || AppState.defaultTranslations[AppState.state.currentLang];
+    
+    strengthText.textContent = t[`passwordStrength_${strength}`] || 
+      (strength === 'weak' ? 'Weak' : strength === 'medium' ? 'Medium' : 'Strong');
+    
+    if (strengthSuggestions) {
+      strengthSuggestions.innerHTML = strength === 'weak' || strength === 'medium' ?
+        suggestions.map(s => `<li>${s}</li>`).join('') : '';
+    }
+  },
+
   setupEventListeners() {
     const addEventListener = (element, event, handler) => {
       if (element) element.addEventListener(event, handler);
@@ -436,6 +532,11 @@ const UI = {
       e.preventDefault();
       EventHandlers.handleCloseAlert();
     });
+    
+    // مستمع لتغييرات كلمة المرور
+    addEventListener(AppState.elements.passwordField, 'input', (e) => {
+      this.updatePasswordStrength(e.target.value);
+    });
   },
 
   async initialize() {
@@ -443,25 +544,19 @@ const UI = {
       this.initializeElements();
       this.setupEventListeners();
       
-      // تطبيق السمة المختارة
       document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
       
-      // تحديث أيقونة السمة
       if (AppState.elements.themeIcon) {
         AppState.elements.themeIcon.className = AppState.state.currentTheme === 'dark' 
           ? 'fa fa-moon icon' 
           : 'fa fa-sun icon';
       }
       
-      // إخفاء التنبيه إذا كان مغلقاً مسبقاً
       if (AppState.state.alertClosed && AppState.elements.serviceAlert) {
         AppState.elements.serviceAlert.style.display = 'none';
       }
       
-      // تحميل الترجمات وتحديث الواجهة
       await EventHandlers.handleLanguageChange(AppState.state.currentLang);
-      
-      // تحديث خيارات نوع كلمة المرور
       EventHandlers.handleTypeChange();
       
       console.log('Application initialized successfully');

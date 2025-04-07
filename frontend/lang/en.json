@@ -29,5 +29,14 @@
   "language_en": "English",
   "alert_title": "Important Notice!",
   "alert_message": "We apologize for the inconvenience, the service is currently unavailable due to maintenance.",
-  "alert_contact": "Contact Support"
+  "alert_contact": "Contact Support",
+  "password_strength_weak": "Weak",
+  "password_strength_medium": "Medium",
+  "password_strength_strong": "Strong",
+  "password_strength_suggestion_length_short": "Password too short (min 8 chars)",
+  "password_strength_suggestion_length_medium": "Consider using 12+ characters",
+  "password_strength_suggestion_case": "Mix uppercase and lowercase",
+  "password_strength_suggestion_numbers": "Add numbers for better security",
+  "password_strength_suggestion_special": "Add special characters (!@#$%)",
+  "password_strength_error": "Error analyzing password strength"
 }

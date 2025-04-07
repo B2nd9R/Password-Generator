@@ -38,7 +38,6 @@
   </div>
   -->
 
-  <!-- البقية تم تحديثها مع الحفاظ على الهيكل -->
   <div class="language-switcher">
     <button class="button glow-on-hover" id="language-ar" onclick="changeLanguage('ar')">
       <span class="button-text">العربية</span>
@@ -84,6 +83,7 @@
                    placeholder="      مثال: abc123!@#" class="modern-input">
             <span class="input-icon"><i class="fas fa-keyboard"></i></span>
           </div>
+        </div>
       </div>
 
       <!-- خيارات قوية مع تحسينات -->
@@ -144,6 +144,15 @@
         <span class="copy-text">نسخ</span>
         <i class="fas fa-copy"></i>
       </button>
+    </div>
+
+    <!-- مؤشر قوة كلمة المرور الجديد -->
+    <div id="password-strength-container" class="strength-indicator">
+      <div class="strength-meter-container">
+        <progress id="password-strength-meter" value="0" max="6" class="strength-meter"></progress>
+        <span id="password-strength-text" class="strength-text"></span>
+      </div>
+      <ul id="password-strength-suggestions" class="strength-suggestions"></ul>
     </div>
   </div>
 
