@@ -31,6 +31,7 @@
         </select>
       </div>
 
+      <!-- خيارات "مخصصة" -->
       <div id="custom-options">
         <div class="control-group">
           <label for="length">طول كلمة المرور:</label>
@@ -40,6 +41,14 @@
         <div class="control-group">
           <label for="custom-chars">أدخل الحروف المخصصة:</label>
           <input type="text" id="custom-chars" placeholder="مثال: abc123!@#">
+        </div>
+      </div>
+
+      <!-- خيارات "قوية" -->
+      <div id="strong-options" style="display: none;">
+        <div class="control-group">
+          <label for="length">طول كلمة المرور:</label>
+          <input type="number" id="length" min="4" max="32" value="16">
         </div>
 
         <div class="control-group">
@@ -61,6 +70,7 @@
         </div>
       </div>
 
+      <!-- خيارات "PIN" -->
       <div id="pin-options" style="display: none;">
         <div class="control-group">
           <label for="pin-length">طول رمز PIN:</label>
