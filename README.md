@@ -34,6 +34,7 @@
 - [📁 هيكل الملفات](docs/STRUCTURE.md)
 - [🤝 المساهمة](docs/CONTRIBUTING.md)
 - [⌚ سجل التغييرات](docs/CHANGELOG.md)
+- [🧪 لتجربة الخدمة] (https://password-generator-vm7k.onrender.com)
 
 ---
 
