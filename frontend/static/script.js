@@ -56,6 +56,7 @@ try {
         const type = elements.typeSelector.value;
         elements.customOptions.style.display = type === 'custom' ? 'block' : 'none';
         elements.pinOptions.style.display = type === 'pin' ? 'block' : 'none';
+        elements.strongOptions.style.display = type === 'strong' ? 'block' : 'none';
       },
   
       handleGenerate: async () => {
