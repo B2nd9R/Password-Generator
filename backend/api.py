@@ -1,12 +1,19 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 from pathlib import Path
 import os
 import logging
+
+from backend.generators import (
+    generate_secure_password,
+    generate_memorable_password,
+    generate_pin,
+    generate_custom_password
+)
 
 # إعداد التسجيل
 logging.basicConfig(level=logging.INFO)
@@ -17,22 +24,25 @@ app = FastAPI()
 # إعداد CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "https://password-generator-vm7k.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # المسارات الصحيحة
-BASE_DIR = Path(__file__).parent.parent  # المجلد الجذر للمشروع
+BASE_DIR = Path(__file__).parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 STATIC_DIR = FRONTEND_DIR / "static"
 ASSETS_DIR = FRONTEND_DIR / "assets"
 
-# خدمة الملفات الثابتة (CSS, JS, الصور)
+# خدمة الملفات الثابتة
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
-
 
 # نماذج البيانات
 class StrongPasswordRequest(BaseModel):
@@ -58,23 +68,32 @@ async def serve_home():
     index_path = FRONTEND_DIR / "index.html"
     if not index_path.exists():
         logger.error("ملف index.html غير موجود")
-        raise HTTPException(status_code=404, detail="الصفحة غير متوفرة")
+        return JSONResponse(
+            {"error": "File not found"},
+            status_code=404
+        )
     return FileResponse(index_path)
 
 @app.post("/generate/strong")
 async def generate_strong(request: StrongPasswordRequest):
     try:
-        password = generate_strong_password(
+        password = generate_secure_password(
             length=request.length,
             uppercase=request.uppercase,
             numbers=request.numbers,
             symbols=request.symbols
         )
-        logger.info(f"تم توليد كلمة مرور قوية: {password[:2]}...")
-        return {"password": password}
+        logger.info(f"تم توليد كلمة مرور قوية")
+        return JSONResponse({
+            "password": password,
+            "status": "success"
+        })
     except Exception as e:
-        logger.error(f"خطأ في توليد كلمة مرور قوية: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"خطأ في التوليد: {str(e)}")
+        return JSONResponse(
+            {"error": str(e), "status": "error"},
+            status_code=400
+        )
 
 @app.post("/generate/memorable")
 async def generate_memorable(request: MemorablePasswordRequest):
@@ -84,38 +103,70 @@ async def generate_memorable(request: MemorablePasswordRequest):
             separator=request.separator
         )
         logger.info(f"تم توليد كلمة مرور سهلة التذكر")
-        return {"password": password}
+        return JSONResponse({
+            "password": password,
+            "status": "success"
+        })
     except Exception as e:
-        logger.error(f"خطأ في توليد كلمة مرور سهلة: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"خطأ في التوليد: {str(e)}")
+        return JSONResponse(
+            {"error": str(e), "status": "error"},
+            status_code=400
+        )
 
 @app.post("/generate/pin")
 async def generate_pin_code(request: PinRequest):
     try:
-        if request.length not in [4, 6]:
-            raise ValueError("يجب أن يكون طول PIN 4 أو 6 أرقام")
+        if request.length not in [4, 6, 8]:
+            raise ValueError("يجب أن يكون طول الرمز 4 او 6 او 8 ارقام")
+        
         pin = generate_pin(length=request.length)
-        logger.info(f"تم توليد PIN: {pin[:2]}...")
-        return {"password": pin}
+        logger.info(f"تم توليد PIN")
+        return JSONResponse({
+            "password": pin,
+            "status": "success"
+        })
     except Exception as e:
-        logger.error(f"خطأ في توليد PIN: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"خطأ في التوليد: {str(e)}")
+        return JSONResponse(
+            {"error": str(e), "status": "error"},
+            status_code=400
+        )
 
 @app.post("/generate/custom")
 async def generate_custom(request: CustomPasswordRequest):
     try:
         if len(request.characters) < 4:
             raise ValueError("يجب إدخال 4 أحرف على الأقل")
+        
         password = generate_custom_password(
             characters=request.characters,
             length=request.length
         )
         logger.info(f"تم توليد كلمة مرور مخصصة")
-        return {"password": password}
+        return JSONResponse({
+            "password": password,
+            "status": "success"
+        })
     except Exception as e:
-        logger.error(f"خطأ في توليد كلمة مرور مخصصة: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
+        logger.error(f"خطأ في التوليد: {str(e)}")
+        return JSONResponse(
+            {"error": str(e), "status": "error"},
+            status_code=400
+        )
+
+@app.middleware("http")
+async def check_static_files(request: Request, call_next):
+    if request.url.path.startswith("/static/"):
+        file_path = STATIC_DIR / request.url.path[8:]
+        if not file_path.exists():
+            logger.error(f"ملف غير موجود: {file_path}")
+            return JSONResponse(
+                {"error": "File not found"},
+                status_code=404
+            )
+    return await call_next(request)
+
 print("\n=== مسارات الملفات ===")
 print(f"دليل الجذر: {BASE_DIR}")
 print(f"يوجد مجلد frontend: {FRONTEND_DIR.exists()}")
