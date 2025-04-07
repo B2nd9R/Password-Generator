@@ -104,7 +104,10 @@ try {
                       break;
               }
 
-              const API_BASE_URL = window.location.origin;
+              const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+              const API_BASE_URL = isLocalhost
+                  ? "http://127.0.0.1:8000"
+                  : "https://password-generator-vm7k.onrender.com";
               const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
