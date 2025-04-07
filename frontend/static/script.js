@@ -88,10 +88,8 @@ const AppState = {
 const Helpers = {
   /**
    * عرض رسالة toast للمستخدم
-   * @param {string} message - الرسالة المعروضة
-   * @param {boolean} isError - إذا كانت رسالة خطأ
    */
-  showToast: (message, isError = false) => {
+  showToast(message, isError = false) {
     try {
       const toast = document.createElement('div');
       toast.className = `toast ${isError ? 'error' : 'success'}`;
@@ -105,46 +103,32 @@ const Helpers = {
 
   /**
    * تعيين حالة التحميل
-   * @param {boolean} isLoading - حالة التحميل
    */
-  setLoading: (isLoading) => {
+  setLoading(isLoading) {
     AppState.state.isLoading = isLoading;
     if (AppState.elements.generateBtn) {
       AppState.elements.generateBtn.disabled = isLoading;
-      // استخدام الترجمات أو النص الافتراضي
       AppState.elements.generateBtn.textContent = isLoading
         ? AppState.state.translations[AppState.state.currentLang]?.loading_text || 'Loading...'
         : AppState.state.translations[AppState.state.currentLang]?.generate_button || 'Generate';
     }
     if (AppState.elements.loadingIndicator) {
-      AppState.elements.loadingIndicator.style.display = isLoading ? 'block' : 'none';
+      AppState.elements.loadingIndicator.style.display = isLoading ? 'flex' : 'none';
     }
   },
 
   /**
    * التحقق من صحة المدخلات الرقمية
-   * @param {string} value - القيمة المدخلة
-   * @param {number} min - الحد الأدنى
-   * @param {number} max - الحد الأقصى
-   * @returns {boolean} - إذا كانت القيمة صالحة
    */
-  validateInput: (value, min, max) => {
+  validateInput(value, min, max) {
     const num = parseInt(value);
     return !isNaN(num) && num >= min && num <= max;
   },
 
   /**
-   * الحصول على عنوان URL الأساسي للخادم
-   * @returns {string} - عنوان URL الأساسي
-   */
-  getAPIBaseURL: () => {
-    return window.location.origin;
-  },
-
-  /**
    * إغلاق تنبيه الخدمة
    */
-  closeAlert: () => {
+  closeAlert() {
     if (AppState.elements.serviceAlert) {
       AppState.elements.serviceAlert.classList.add('hidden');
       setTimeout(() => {
@@ -157,6 +141,55 @@ const Helpers = {
 };
 
 /**
+ * خدمة API
+ * مسؤولة عن جميع الاتصالات مع الخادم
+ */
+const ApiService = {
+  /**
+   * إنشاء كلمة مرور
+   */
+  async generatePassword(type, body) {
+    try {
+      // استخدم مسارًا نسبيًا بدلاً من المسار الكامل
+      const endpoint = `/api/generate/${type}`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept-Language': AppState.state.currentLang
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Server error');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * تحميل الترجمات
+   */
+  async loadTranslations(lang) {
+    try {
+      // استخدم مسارًا نسبيًا لملفات الترجمة
+      const response = await fetch(`/api/lang/${lang}.json`);
+      return response.ok ? await response.json() : AppState.defaultTranslations[lang];
+    } catch (error) {
+      console.error('Translation load error:', error);
+      return AppState.defaultTranslations[lang];
+    }
+  }
+};
+
+/**
  * معالجات الأحداث
  * تحتوي على جميع الدوال المسؤولة عن معالجة أحداث المستخدم
  */
@@ -164,7 +197,7 @@ const EventHandlers = {
   /**
    * معالجة تغيير نوع كلمة المرور
    */
-  handleTypeChange: () => {
+  handleTypeChange() {
     const type = AppState.elements.typeSelector.value;
     const options = {
       'custom': AppState.elements.customOptions,
@@ -172,7 +205,6 @@ const EventHandlers = {
       'strong': AppState.elements.strongOptions
     };
 
-    // إظهار/إخفاء الخيارات حسب النوع المحدد
     Object.entries(options).forEach(([key, element]) => {
       if (element) element.style.display = type === key ? 'block' : 'none';
     });
@@ -181,7 +213,7 @@ const EventHandlers = {
   /**
    * معالجة إنشاء كلمة المرور
    */
-  handleGenerate: async () => {
+  async handleGenerate() {
     if (AppState.state.isLoading) return;
 
     const type = AppState.elements.typeSelector.value;
@@ -220,27 +252,13 @@ const EventHandlers = {
           throw new Error('Unsupported password type');
       }
 
-      // التحقق من صحة طول كلمة المرور
       if (type !== 'memorable' && !Helpers.validateInput(length, 4, 64)) {
         throw new Error(AppState.state.translations[AppState.state.currentLang]?.lengthError || 'Invalid length');
       }
 
       Helpers.setLoading(true);
-      const response = await fetch(`${Helpers.getAPIBaseURL()}/generate/${type}`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept-Language': AppState.state.currentLang
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || 'Server error');
-      }
-
-      const data = await response.json();
+      const data = await ApiService.generatePassword(type, body);
+      
       AppState.elements.passwordField.value = data.password;
       Helpers.showToast(data.message || 'Password generated');
     } catch (error) {
@@ -254,7 +272,7 @@ const EventHandlers = {
   /**
    * معالجة نسخ كلمة المرور
    */
-  handleCopy: async () => {
+  async handleCopy() {
     try {
       if (!AppState.elements.passwordField.value) {
         throw new Error(AppState.state.translations[AppState.state.currentLang]?.no_password || 'No password to copy');
@@ -270,7 +288,7 @@ const EventHandlers = {
   /**
    * تبديل السمة بين الفاتح والداكن
    */
-  handleThemeToggle: () => {
+  handleThemeToggle() {
     AppState.state.currentTheme = AppState.state.currentTheme === 'light' ? 'dark' : 'light';
     document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
     localStorage.setItem('theme', AppState.state.currentTheme);
@@ -284,18 +302,18 @@ const EventHandlers = {
 
   /**
    * تغيير لغة التطبيق
-   * @param {string} lang - كود اللغة (ar/en)
    */
-  handleLanguageChange: async (lang) => {
+  async handleLanguageChange(lang) {
     try {
       AppState.state.currentLang = lang;
       localStorage.setItem('lang', lang);
       
-      // تحديث اتجاه الصفحة حسب اللغة
       document.documentElement.lang = lang;
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
       
-      await TranslationService.loadTranslations(lang);
+      AppState.state.translations[lang] = await ApiService.loadTranslations(lang);
+      UI.updateTextContent();
+      
       Helpers.showToast(`Language changed to ${lang === 'ar' ? 'Arabic' : 'English'}`);
     } catch (error) {
       console.error('Language change error:', error);
@@ -305,36 +323,8 @@ const EventHandlers = {
   /**
    * إغلاق تنبيه الخدمة
    */
-  handleCloseAlert: () => {
+  handleCloseAlert() {
     Helpers.closeAlert();
-  }
-};
-
-/**
- * خدمة الترجمة
- * مسؤولة عن تحميل وإدارة الترجمات
- */
-const TranslationService = {
-  /**
-   * تحميل الترجمات من ملفات JSON
-   * @param {string} lang - كود اللغة المطلوبة
-   */
-  loadTranslations: async (lang) => {
-    try {
-      const response = await fetch(`/lang/${lang}.json?t=${Date.now()}`);
-      
-      // استخدام الترجمات من الملف أو الترجمات الافتراضية
-      AppState.state.translations[lang] = response.ok 
-        ? await response.json() 
-        : AppState.defaultTranslations[lang];
-      
-      UI.updateTextContent();
-    } catch (error) {
-      console.error('Translation error:', error);
-      // استخدام الترجمات الافتراضية في حالة الخطأ
-      AppState.state.translations[lang] = AppState.defaultTranslations[lang];
-      UI.updateTextContent();
-    }
   }
 };
 
@@ -346,7 +336,7 @@ const UI = {
   /**
    * تهيئة عناصر DOM
    */
-  initializeElements: () => {
+  initializeElements() {
     AppState.elements = {
       typeSelector: document.getElementById('type'),
       generateBtn: document.getElementById('generate'),
@@ -378,12 +368,10 @@ const UI = {
   /**
    * تحديث النصوص حسب اللغة الحالية
    */
-  updateTextContent: () => {
+  updateTextContent() {
     const lang = AppState.state.currentLang;
-    // استخدام الترجمات المحملة أو الافتراضية
     const t = AppState.state.translations[lang] || AppState.defaultTranslations[lang];
     
-    // عناصر DOM التي تحتاج تحديث النص
     const elementsToUpdate = {
       'page_title': () => document.title = t.page_title,
       'title': AppState.elements.title,
@@ -408,7 +396,6 @@ const UI = {
       'alert_contact': AppState.elements.alertContact
     };
 
-    // تحديث نصوص العناصر
     Object.entries(elementsToUpdate).forEach(([key, element]) => {
       if (typeof element === 'function') {
         element();
@@ -421,14 +408,12 @@ const UI = {
   /**
    * إعداد معالجي الأحداث
    */
-  setupEventListeners: () => {
-    // دالة مساعدة لإضافة معالج الأحداث مع التحقق من وجود العنصر
+  setupEventListeners() {
     const addEventListener = (element, event, handler) => {
       if (element) element.addEventListener(event, handler);
     };
 
-    // إضافة معالجي الأحداث
-    addEventListener(AppState.elements.typeSelector, 'change', EventHandlers.handleTypeChange);
+    addEventListener(AppState.elements.typeSelector, 'change', () => EventHandlers.handleTypeChange());
     addEventListener(AppState.elements.generateBtn, 'click', (e) => {
       e.preventDefault();
       EventHandlers.handleGenerate();
@@ -458,7 +443,7 @@ const UI = {
   /**
    * تهيئة التطبيق
    */
-  initialize: async () => {
+  async initialize() {
     try {
       this.initializeElements();
       this.setupEventListeners();
@@ -479,7 +464,8 @@ const UI = {
       }
       
       // تحميل الترجمات وتحديث الواجهة
-      await TranslationService.loadTranslations(AppState.state.currentLang);
+      AppState.state.translations[AppState.state.currentLang] = await ApiService.loadTranslations(AppState.state.currentLang);
+      this.updateTextContent();
       
       // تحديث خيارات نوع كلمة المرور
       EventHandlers.handleTypeChange();
