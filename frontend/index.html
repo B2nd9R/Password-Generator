@@ -5,34 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
   <title data-translate="page_title">مولد كلمات المرور الآمنة</title>
   <link rel="icon" href="/assets/logo.png" type="image/x-icon">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="../frontend/static/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
 
-  <!-- أزرار تبديل اللغة -->
-  <div class="language-switcher">
-    <button class="button" id="language-ar" onclick="changeLanguage('ar')">العربية</button>
-    <button class="button" id="language-en" onclick="changeLanguage('en')">English</button>
+  <!-- تنبيه الخدمة (بدون تغيير) -->
+  <div class="service-alert">
+    <div class="alert-container">
+      <div class="warning-icon">
+        <div class="pulse-effect"></div>
+        <div class="inner-icon">⚠️</div>
+      </div>
+      <div class="alert-content">
+        <h3>تنبيه مهم!</h3>
+        <p>نعتذر عن الإزعاج، الخدمة غير متاحة حاليًا بسبب أعمال الصيانة والتطوير. نحن نعمل بجد لإصلاح المشكلة واستعادة الخدمة في أقرب وقت ممكن.</p>
+        <div class="progress-container">
+          <div class="progress-bar"></div>
+        </div>
+      </div>
+      <div class="close-btn">&times;</div>
+    </div>
   </div>
 
-  <!-- المقدمة -->
+  <!-- البقية تم تحديثها مع الحفاظ على الهيكل -->
+  <div class="language-switcher">
+    <button class="button glow-on-hover" id="language-ar" onclick="changeLanguage('ar')">
+      <span class="button-text">العربية</span>
+    </button>
+    <button class="button glow-on-hover" id="language-en" onclick="changeLanguage('en')">
+      <span class="button-text">English</span>
+    </button>
+  </div>
+
   <div class="container">
     <div class="header">
-      <h1 data-translate="title">مولد كلمات المرور الآمنة</h1>
-      <p data-translate="description">اختر نوع كلمة المرور وأنشئها بسهولة وأمان</p>
-      <button id="theme-toggle" class="theme-toggle-btn">
-        <span data-translate="theme_toggle">تغيير الثيم</span>
-        <i id="theme-icon" class="fa fa-sun icon"></i>
+      <h1 data-translate="title" class="neon-text">مولد كلمات المرور الآمنة</h1>
+      <p data-translate="description" class="subtitle">اختر نوع كلمة المرور وأنشئها بسهولة وأمان</p>
+      <button id="theme-toggle" class="theme-toggle-btn floating-effect">
+        <span data-translate="theme_toggle" class="btn-label">تغيير الثيم</span>
+        <i id="theme-icon" class="fa fa-sun icon pulse"></i>
       </button>
     </div>
 
-    <!-- قائمة الخيارات -->
     <div class="controls">
-      <div class="control-group">
-        <label for="type" data-translate="password_type">نوع كلمة المرور:</label>
-        <select id="type">
+      <!-- تحسينات العناصر التفاعلية -->
+      <div class="control-group slide-in">
+        <label for="type" data-translate="password_type" class="input-label">نوع كلمة المرور:</label>
+        <select id="type" class="modern-select">
           <option value="custom" data-translate="custom_option">مخصصة</option>
           <option value="strong" data-translate="strong_option">قوية</option>
           <option value="memorable" data-translate="memorable_option">سهلة التذكر</option>
@@ -40,50 +61,47 @@
         </select>
       </div>
 
-      <!-- خيارات مخصصة -->
-      <div id="custom-options">
-        <div class="control-group">
-          <label for="custom-length" data-translate="password_length">طول كلمة المرور:</label>
-          <input type="number" id="custom-length" min="4" max="32" value="12">
+      <!-- خيارات مخصصة مع تأثيرات -->
+      <div id="custom-options" class="options-group">
+        <div class="control-group pop-in">
+          <label for="custom-length" data-translate="password_length" class="input-label">طول كلمة المرور:</label>
+          <input type="number" id="custom-length" min="4" max="32" value="12" class="modern-input">
         </div>
 
-        <div class="control-group">
-          <label for="custom-chars" data-translate="custom_chars">أدخل الحروف المخصصة:</label>
-          <input type="text" id="custom-chars" placeholder="مثال: abc123!@#">
-        </div>
-      </div>
-
-      <!-- خيارات قوية -->
-      <div id="strong-options" style="display: none;">
-        <div class="control-group">
-          <label for="strong-length" data-translate="password_length">طول كلمة المرور:</label>
-          <input type="number" id="strong-length" min="4" max="32" value="16">
-        </div>
-
-        <div class="control-group">
-          <label data-translate="password_options">خيارات كلمة المرور:</label>
-          <div class="checkbox-group">
-            <input type="checkbox" id="uppercase" checked>
-            <label for="uppercase" data-translate="uppercase">أحرف كبيرة (A-Z)</label>
-          </div>
-
-          <div class="checkbox-group">
-            <input type="checkbox" id="numbers" checked>
-            <label for="numbers" data-translate="numbers">أرقام (0-9)</label>
-          </div>
-
-          <div class="checkbox-group">
-            <input type="checkbox" id="symbols" checked>
-            <label for="symbols" data-translate="symbols">رموز خاصة (!@#$%)</label>
-          </div>
+        <div class="control-group pop-in">
+          <label for="custom-chars" data-translate="custom_chars" class="input-label">أدخل الحروف المخصصة:</label>
+          <input type="text" id="custom-chars" placeholder="مثال: abc123!@#" class="modern-input">
         </div>
       </div>
 
-      <!-- خيارات رمز PIN -->
-      <div id="pin-options" style="display: none;">
-        <div class="control-group">
-          <label for="pin-length" data-translate="pin_length">طول رمز PIN:</label>
-          <select id="pin-length">
+      <!-- خيارات قوية مع تحسينات -->
+      <div id="strong-options" class="options-group" style="display: none;">
+        <div class="control-group slide-in">
+          <label for="strong-length" data-translate="password_length" class="input-label">طول كلمة المرور:</label>
+          <input type="number" id="strong-length" min="4" max="32" value="16" class="modern-input">
+        </div>
+
+        <div class="checkbox-group hover-glow">
+          <input type="checkbox" id="uppercase" checked class="modern-checkbox">
+          <label for="uppercase" data-translate="uppercase" class="checkbox-label">أحرف كبيرة (A-Z)</label>
+        </div>
+
+        <div class="checkbox-group hover-glow">
+          <input type="checkbox" id="numbers" checked class="modern-checkbox">
+          <label for="numbers" data-translate="numbers" class="checkbox-label">أرقام (0-9)</label>
+        </div>
+
+        <div class="checkbox-group hover-glow">
+          <input type="checkbox" id="symbols" checked class="modern-checkbox">
+          <label for="symbols" data-translate="symbols" class="checkbox-label">رموز خاصة (!@#$%)</label>
+        </div>
+      </div>
+
+      <!-- خيارات PIN محسنة -->
+      <div id="pin-options" class="options-group" style="display: none;">
+        <div class="control-group slide-in">
+          <label for="pin-length" data-translate="pin_length" class="input-label">طول رمز PIN:</label>
+          <select id="pin-length" class="modern-select">
             <option value="4">4 أرقام</option>
             <option value="6">6 أرقام</option>
             <option value="8">8 أرقام</option>
@@ -92,20 +110,32 @@
       </div>
     </div>
 
-    <!-- زر التوليد -->
-    <button class="generate-btn" id="generate" data-translate="generate_button">إنشاء كلمة مرور</button>
+    <!-- زر التوليد مع تأثيرات جديدة -->
+    <button class="generate-btn gradient-hover" id="generate" data-translate="generate_button">
+      <span class="btn-text">إنشاء كلمة مرور</span>
+      <div class="hover-effect"></div>
+    </button>
 
-    <!-- مؤشر التحميل -->
-    <div id="loading" class="loading-indicator" style="display: none;" data-translate="loading_text">جارٍ التوليد...</div>
+    <!-- مؤشر التحميل مع تحسينات -->
+    <div id="loading" class="loading-indicator" style="display: none;" data-translate="loading_text">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">جارٍ التوليد...</span>
+    </div>
 
-    <!-- عرض النتيجة -->
-    <div class="result">
-      <input type="text" id="password" readonly placeholder="ستظهر كلمة المرور هنا" data-translate="password_placeholder">
-      <button class="copy-btn" id="copy" data-translate="copy_button">نسخ</button>
+    <!-- عرض النتيجة مع تحسينات -->
+    <div class="result glow-border">
+      <input type="text" id="password" readonly 
+             placeholder="ستظهر كلمة المرور هنا" 
+             data-translate="password_placeholder"
+             class="password-display">
+      <button class="copy-btn slide-hover" id="copy" data-translate="copy_button">
+        <span class="copy-text">نسخ</span>
+        <i class="fas fa-copy"></i>
+      </button>
     </div>
   </div>
 
   <!-- ربط ملف JavaScript -->
-  <script src="/static/script.js"></script>
+  <script src="../frontend/static/script.js"></script>
 </body>
 </html>

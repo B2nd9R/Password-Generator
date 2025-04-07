@@ -230,12 +230,214 @@ body::after {
   transition: var(--transition);
 }
 
+/* ====================================== */
+/* تصميم تنبيه الخدمة المعطلة المحدث */
+/* ====================================== */
+.service-alert {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  z-index: 9999;
+  font-family: 'Tajawal', sans-serif;
+  animation: slideIn 0.5s ease-out forwards;
+  transition: all 0.3s ease;
+}
+
+.service-alert.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+  pointer-events: none;
+}
+
+.alert-container {
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(239, 108, 0, 0.3);
+  border-left: 5px solid #FF9800;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.alert-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="none" width="100" height="100"/><path fill="rgba(255,255,255,0.2)" d="M30,0L50,0L50,20L30,20ZM70,0L90,0L90,20L70,20ZM10,30L30,30L30,50L10,50ZM50,30L70,30L70,50L50,50ZM90,30L110,30L110,50L90,50ZM30,50L50,50L50,70L30,70ZM70,50L90,50L90,70L70,70Z"/></svg>');
+  opacity: 0.1;
+}
+
+.warning-icon {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  width: 60px;
+  height: 60px;
+  background: #FF5722;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(255, 87, 34, 0.6);
+}
+
+.inner-icon {
+  font-size: 30px;
+  color: white;
+  z-index: 2;
+}
+
+.pulse-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #FF5722;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  opacity: 0.6;
+  z-index: 1;
+}
+
+.alert-content {
+  padding-right: 50px;
+}
+
+.alert-content h3 {
+  color: #E65100;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.alert-content p {
+  color: #5D4037;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.progress-container {
+  height: 6px;
+  background: rgba(255, 152, 0, 0.2);
+  border-radius: 3px;
+  margin: 15px 0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 65%;
+  background: linear-gradient(90deg, #FF9800, #FF5722);
+  border-radius: 3px;
+  animation: progress 2s ease-in-out infinite alternate;
+}
+
+.contact-link a {
+  display: inline-flex;
+  align-items: center;
+  color: #E65100;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.contact-link a:hover {
+  color: #BF360C;
+}
+
+.contact-link a span {
+  margin-right: 5px;
+  transition: transform 0.3s;
+}
+
+.contact-link a:hover span {
+  transform: translateX(5px);
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 24px;
+  color: #5D4037;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+}
+
+.close-btn:hover {
+  background: rgba(0,0,0,0.1);
+  color: #D84315;
+  transform: rotate(90deg) scale(1.1);
+}
+
+@keyframes slideIn {
+  from { top: -100px; opacity: 0; }
+  to { top: 20px; opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  70% { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes progress {
+  0% { width: 65%; }
+  100% { width: 85%; }
+}
+
+/* دعم الوضع الداكن لتنبيه الخدمة */
+.dark-theme .alert-container {
+  background: linear-gradient(135deg, #424242 0%, #212121 100%);
+  border-left-color: #FF7043;
+}
+
+.dark-theme .alert-content h3 {
+  color: #FFAB40;
+}
+
+.dark-theme .alert-content p {
+  color: #EEEEEE;
+}
+
+.dark-theme .contact-link a {
+  color: #FFAB40;
+}
+
+.dark-theme .contact-link a:hover {
+  color: #FF7043;
+}
+
+.dark-theme .close-btn {
+  color: #EEEEEE;
+  background: rgba(255,255,255,0.1);
+}
+
+.dark-theme .close-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ====================================== */
+/* بقية الأنماط الموجودة سابقاً */
+/* ====================================== */
+
 /* تصميم أزرار تبديل اللغة */
 .language-switcher {
   display: flex;
   gap: 20px;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 200px;
 }
 
 /* تصميم الأزرار */

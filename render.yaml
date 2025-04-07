@@ -4,11 +4,18 @@ services:
     env: python
     buildCommand: |
       pip install -r backend/requirements.txt
-      cp -r frontend/static backend/  # نسخ الملفات الثابتة
-      cp -r frontend/lang backend/    # نسخ ملفات اللغة
-    startCommand: uvicorn backend.api:app --host 0.0.0.0 --port 10000
+      mkdir -p backend/static
+      cp -r frontend/static/* backend/static/
+      mkdir -p backend/lang
+      cp -r frontend/lang/* backend/lang/
+    startCommand: uvicorn backend.api:app --host 0.0.0.0 --port=$PORT
+    envVars:
+      - key: PORT
+        value: 10000
     staticDirs:
       - path: /static
-        directory: backend/static
+        directory: frontend/static
       - path: /lang
-        directory: backend/lang
+        directory: frontend/lang
+      - path: /assets
+        directory: frontend/assets

@@ -6,6 +6,7 @@ const AppState = {
     isLoading: false,
     currentTheme: localStorage.getItem('theme') || 'light',
     currentLang: localStorage.getItem('lang') || 'ar',
+    alertClosed: localStorage.getItem('alertClosed') === 'true',
     translations: {
       en: {},
       ar: {}
@@ -38,7 +39,10 @@ const AppState = {
       copied: "Copied!",
       lengthError: "Invalid length (4-64 characters)",
       error: "Error occurred",
-      no_password: "No password to copy"
+      no_password: "No password to copy",
+      alert_title: "Important Notice!",
+      alert_message: "We apologize for the inconvenience, the service is currently unavailable due to maintenance.",
+      alert_contact: "Contact Support"
     },
     ar: {
       page_title: "مولد كلمات مرور آمنة",
@@ -65,7 +69,10 @@ const AppState = {
       copied: "تم النسخ!",
       lengthError: "طول غير صالح (4-64 حرف)",
       error: "حدث خطأ",
-      no_password: "لا يوجد كلمة مرور للنسخ"
+      no_password: "لا يوجد كلمة مرور للنسخ",
+      alert_title: "تنبيه مهم!",
+      alert_message: "نعتذر عن الإزعاج، الخدمة غير متاحة حاليًا بسبب أعمال الصيانة",
+      alert_contact: "تواصل مع الدعم"
     }
   }
 };
@@ -104,6 +111,17 @@ const Helpers = {
 
   getAPIBaseURL: () => {
     return window.location.origin;
+  },
+
+  closeAlert: () => {
+    if (AppState.elements.serviceAlert) {
+      AppState.elements.serviceAlert.classList.add('hidden');
+      setTimeout(() => {
+        AppState.elements.serviceAlert.style.display = 'none';
+        AppState.state.alertClosed = true;
+        localStorage.setItem('alertClosed', 'true');
+      }, 300);
+    }
   }
 };
 
@@ -229,6 +247,10 @@ const EventHandlers = {
     } catch (error) {
       console.error('Language change error:', error);
     }
+  },
+
+  handleCloseAlert: () => {
+    Helpers.closeAlert();
   }
 };
 
@@ -272,7 +294,12 @@ const UI = {
       loadingIndicator: document.getElementById('loading'),
       themeIcon: document.getElementById('theme-icon'),
       langArButton: document.getElementById('language-ar'),
-      langEnButton: document.getElementById('language-en')
+      langEnButton: document.getElementById('language-en'),
+      serviceAlert: document.getElementById('serviceAlert'),
+      closeAlertBtn: document.getElementById('closeAlert'),
+      alertTitle: document.getElementById('alertTitle'),
+      alertMessage: document.getElementById('alertMessage'),
+      alertContact: document.getElementById('alertContact')
     };
   },
 
@@ -299,7 +326,10 @@ const UI = {
       'uppercase': AppState.elements.uppercaseLabel,
       'numbers': AppState.elements.numbersLabel,
       'symbols': AppState.elements.symbolsLabel,
-      'pin_length': AppState.elements.pinLengthLabel
+      'pin_length': AppState.elements.pinLengthLabel,
+      'alert_title': AppState.elements.alertTitle,
+      'alert_message': AppState.elements.alertMessage,
+      'alert_contact': AppState.elements.alertContact
     };
 
     Object.entries(elementsToUpdate).forEach(([key, element]) => {
@@ -338,6 +368,10 @@ const UI = {
       e.preventDefault();
       EventHandlers.handleLanguageChange('en');
     });
+    addEventListener(AppState.elements.closeAlertBtn, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleCloseAlert();
+    });
   },
 
   initialize: async () => {
@@ -351,6 +385,11 @@ const UI = {
         AppState.elements.themeIcon.className = AppState.state.currentTheme === 'dark' 
           ? 'fa fa-moon icon' 
           : 'fa fa-sun icon';
+      }
+      
+      // إخفاء التنبيه إذا كان مغلقاً مسبقاً
+      if (AppState.state.alertClosed && AppState.elements.serviceAlert) {
+        AppState.elements.serviceAlert.style.display = 'none';
       }
       
       await TranslationService.loadTranslations(AppState.state.currentLang);
