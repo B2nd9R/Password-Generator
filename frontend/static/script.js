@@ -1,201 +1,497 @@
-// ==== Configuration & Constants ====
-const CONFIG = {
-  API_ENDPOINTS: {
-    STRONG: '/generate/strong',
-    MEMORABLE: '/generate/memorable',
-    PIN: '/generate/pin',
-    CUSTOM: '/generate/custom'
-  },
-  LENGTH_RANGES: { MIN: 4, MAX: 64 },
-  DEFAULT_LANG: 'ar',
-  ERROR_MESSAGES: {
-    GENERIC: 'حدث خطأ غير متوقع',
-    NO_PASSWORD: 'لا يوجد كلمة مرور للنسخ',
-    COPY_FAILED: 'فشلت عملية النسخ'
-  }
-};
-
-// ==== State Management ====
-const state = {
-  currentLang: localStorage.getItem('lang') || CONFIG.DEFAULT_LANG,
-  currentTheme: localStorage.getItem('theme') || 'light',
-  isLoading: false,
-  translations: {}
-};
-
-// ==== DOM Elements ====
-const DOM = {
-  elements: {
-    password: document.getElementById('password'),
-    generateBtn: document.getElementById('generate'),
-    typeSelector: document.getElementById('type'),
-    themeToggle: document.getElementById('theme-toggle')
-  },
+/**
+ * حالة التطبيق والترجمات
+ * يحتوي على جميع الحالات والإعدادات الأساسية للتطبيق
+ */
+const AppState = {
+  elements: null, // سيتم تعبئته بعناصر DOM عند التهيئة
   
-  getByDataAttr(attr) {
-    return document.querySelectorAll(`[data-${attr}]`);
+  state: {
+    isLoading: false, // حالة التحميل
+    currentTheme: localStorage.getItem('theme') || 'light', // السمة الحالية
+    currentLang: localStorage.getItem('lang') || 'ar', // اللغة الحالية
+    alertClosed: localStorage.getItem('alertClosed') === 'true', // حالة التنبيه
+    translations: { // تخزين الترجمات
+      en: {},
+      ar: {}
+    }
+  },
+
+  // الترجمات الافتراضية في حالة عدم توفر ملفات الترجمة
+  defaultTranslations: {
+    en: {
+      page_title: "Secure Password Generator",
+      title: "Secure Password Generator",
+      description: "Choose the password type and generate it easily and securely",
+      theme_toggle: "Toggle Theme",
+      password_type: "Password Type:",
+      custom_option: "Custom",
+      strong_option: "Strong",
+      memorable_option: "Memorable",
+      pin_option: "PIN",
+      password_length: "Password Length:",
+      custom_chars: "Enter custom characters:",
+      generate_button: "Generate Password",
+      loading_text: "Generating...",
+      password_placeholder: "Password will appear here",
+      copy_button: "Copy",
+      uppercase: "Uppercase letters (A-Z)",
+      numbers: "Numbers (0-9)",
+      symbols: "Special characters (!@#$%)",
+      pin_length: "PIN Length:",
+      language: "Language",
+      success: "Password generated successfully",
+      copied: "Copied!",
+      lengthError: "Invalid length (4-64 characters)",
+      error: "Error occurred",
+      no_password: "No password to copy",
+      alert_title: "Important Notice!",
+      alert_message: "We apologize for the inconvenience, the service is currently unavailable due to maintenance.",
+      alert_contact: "Contact Support"
+    },
+    ar: {
+      page_title: "مولد كلمات مرور آمنة",
+      title: "مولد كلمات مرور آمنة",
+      description: "اختر نوع كلمة المرور وقم بتوليدها بسهولة وأمان",
+      theme_toggle: "تبديل السمة",
+      password_type: "نوع كلمة المرور:",
+      custom_option: "مخصص",
+      strong_option: "قوي",
+      memorable_option: "سهل التذكر",
+      pin_option: "رمز سري",
+      password_length: "طول كلمة المرور:",
+      custom_chars: "أدخل أحرف مخصصة:",
+      generate_button: "توليد كلمة المرور",
+      loading_text: "جاري التوليد...",
+      password_placeholder: "ستظهر كلمة المرور هنا",
+      copy_button: "نسخ",
+      uppercase: "أحرف كبيرة (A-Z)",
+      numbers: "أرقام (0-9)",
+      symbols: "رموز خاصة (!@#$%)",
+      pin_length: "طول الرمز السري:",
+      language: "اللغة",
+      success: "تم توليد كلمة المرور بنجاح",
+      copied: "تم النسخ!",
+      lengthError: "طول غير صالح (4-64 حرف)",
+      error: "حدث خطأ",
+      no_password: "لا يوجد كلمة مرور للنسخ",
+      alert_title: "تنبيه مهم!",
+      alert_message: "نعتذر عن الإزعاج، الخدمة غير متاحة حاليًا بسبب أعمال الصيانة",
+      alert_contact: "تواصل مع الدعم"
+    }
   }
 };
 
-// ==== Core Utilities ====
-const utils = {
-  showToast(message, isError = false) {
-    const toast = document.createElement('div');
-    toast.className = `toast ${isError ? 'error' : 'success'}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  },
-
-  validateLength(value) {
-    const num = parseInt(value);
-    return !isNaN(num) && num >= CONFIG.LENGTH_RANGES.MIN && num <= CONFIG.LENGTH_RANGES.MAX;
-  },
-
-  handleError(error) {
-    console.error(error);
-    this.showToast(error.message || CONFIG.ERROR_MESSAGES.GENERIC, true);
-  }
-};
-
-// ==== API Service ====
-const apiService = {
-  async generatePassword(type, body) {
+/**
+ * الدوال المساعدة
+ * تحتوي على وظائف عامة تستخدم في مختلف أجزاء التطبيق
+ */
+const Helpers = {
+  /**
+   * عرض رسالة toast للمستخدم
+   * @param {string} message - الرسالة المعروضة
+   * @param {boolean} isError - إذا كانت رسالة خطأ
+   */
+  showToast: (message, isError = false) => {
     try {
-      const response = await fetch(CONFIG.API_ENDPOINTS[type.toUpperCase()], {
+      const toast = document.createElement('div');
+      toast.className = `toast ${isError ? 'error' : 'success'}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    } catch (e) {
+      console.error('Toast error:', e);
+    }
+  },
+
+  /**
+   * تعيين حالة التحميل
+   * @param {boolean} isLoading - حالة التحميل
+   */
+  setLoading: (isLoading) => {
+    AppState.state.isLoading = isLoading;
+    if (AppState.elements.generateBtn) {
+      AppState.elements.generateBtn.disabled = isLoading;
+      // استخدام الترجمات أو النص الافتراضي
+      AppState.elements.generateBtn.textContent = isLoading
+        ? AppState.state.translations[AppState.state.currentLang]?.loading_text || 'Loading...'
+        : AppState.state.translations[AppState.state.currentLang]?.generate_button || 'Generate';
+    }
+    if (AppState.elements.loadingIndicator) {
+      AppState.elements.loadingIndicator.style.display = isLoading ? 'block' : 'none';
+    }
+  },
+
+  /**
+   * التحقق من صحة المدخلات الرقمية
+   * @param {string} value - القيمة المدخلة
+   * @param {number} min - الحد الأدنى
+   * @param {number} max - الحد الأقصى
+   * @returns {boolean} - إذا كانت القيمة صالحة
+   */
+  validateInput: (value, min, max) => {
+    const num = parseInt(value);
+    return !isNaN(num) && num >= min && num <= max;
+  },
+
+  /**
+   * الحصول على عنوان URL الأساسي للخادم
+   * @returns {string} - عنوان URL الأساسي
+   */
+  getAPIBaseURL: () => {
+    return window.location.origin;
+  },
+
+  /**
+   * إغلاق تنبيه الخدمة
+   */
+  closeAlert: () => {
+    if (AppState.elements.serviceAlert) {
+      AppState.elements.serviceAlert.classList.add('hidden');
+      setTimeout(() => {
+        AppState.elements.serviceAlert.style.display = 'none';
+        AppState.state.alertClosed = true;
+        localStorage.setItem('alertClosed', 'true');
+      }, 300);
+    }
+  }
+};
+
+/**
+ * معالجات الأحداث
+ * تحتوي على جميع الدوال المسؤولة عن معالجة أحداث المستخدم
+ */
+const EventHandlers = {
+  /**
+   * معالجة تغيير نوع كلمة المرور
+   */
+  handleTypeChange: () => {
+    const type = AppState.elements.typeSelector.value;
+    const options = {
+      'custom': AppState.elements.customOptions,
+      'pin': AppState.elements.pinOptions,
+      'strong': AppState.elements.strongOptions
+    };
+
+    // إظهار/إخفاء الخيارات حسب النوع المحدد
+    Object.entries(options).forEach(([key, element]) => {
+      if (element) element.style.display = type === key ? 'block' : 'none';
+    });
+  },
+
+  /**
+   * معالجة إنشاء كلمة المرور
+   */
+  handleGenerate: async () => {
+    if (AppState.state.isLoading) return;
+
+    const type = AppState.elements.typeSelector.value;
+    let length, body;
+
+    try {
+      switch (type) {
+        case 'strong':
+          length = parseInt(AppState.elements.strongLength.value) || 16;
+          body = {
+            length,
+            uppercase: AppState.elements.uppercaseCheckbox.checked,
+            numbers: AppState.elements.numbersCheckbox.checked,
+            symbols: AppState.elements.symbolsCheckbox.checked
+          };
+          break;
+
+        case 'memorable':
+          body = { num_words: 3, separator: '-' };
+          break;
+
+        case 'pin':
+          length = parseInt(AppState.elements.pinLengthSelect.value) || 4;
+          body = { length };
+          break;
+
+        case 'custom':
+          length = parseInt(AppState.elements.lengthInput.value) || 12;
+          body = {
+            characters: AppState.elements.customCharsInput.value,
+            length
+          };
+          break;
+
+        default:
+          throw new Error('Unsupported password type');
+      }
+
+      // التحقق من صحة طول كلمة المرور
+      if (type !== 'memorable' && !Helpers.validateInput(length, 4, 64)) {
+        throw new Error(AppState.state.translations[AppState.state.currentLang]?.lengthError || 'Invalid length');
+      }
+
+      Helpers.setLoading(true);
+      const response = await fetch(`${Helpers.getAPIBaseURL()}/generate/${type}`, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
-          'Accept-Language': state.currentLang
+          'Accept-Language': AppState.state.currentLang
         },
         body: JSON.stringify(body)
       });
 
-      if (!response.ok) throw new Error(await response.text());
-      return await response.json();
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  }
-};
-
-// ==== Event Handlers ====
-const handlers = {
-  async handleGenerate(e) {
-    e.preventDefault();
-    if (state.isLoading) return;
-
-    state.isLoading = true;
-    DOM.elements.generateBtn.disabled = true;
-
-    try {
-      const type = DOM.elements.typeSelector.value;
-      const body = this.getRequestBody(type);
-      
-      const data = await apiService.generatePassword(type, body);
-      DOM.elements.password.value = data.password;
-      utils.showToast(data.message);
-    } catch (error) {
-      utils.handleError(error);
-    } finally {
-      state.isLoading = false;
-      DOM.elements.generateBtn.disabled = false;
-    }
-  },
-
-  getRequestBody(type) {
-    const getValue = (id) => document.getElementById(id).value;
-    const getChecked = (id) => document.getElementById(id).checked;
-
-    switch (type) {
-      case 'strong':
-        return {
-          length: getValue('strong-length'),
-          uppercase: getChecked('uppercase'),
-          numbers: getChecked('numbers'),
-          symbols: getChecked('symbols')
-        };
-      case 'custom':
-        return {
-          length: getValue('custom-length'),
-          characters: getValue('custom-chars')
-        };
-      case 'pin':
-        return { length: getValue('pin-length') };
-      case 'memorable':
-        return { num_words: 3, separator: '-' };
-      default:
-        throw new Error('نوع كلمة المرور غير معروف');
-    }
-  },
-
-  async handleCopy() {
-    try {
-      if (!DOM.elements.password.value) {
-        throw new Error(CONFIG.ERROR_MESSAGES.NO_PASSWORD);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Server error');
       }
-      await navigator.clipboard.writeText(DOM.elements.password.value);
-      utils.showToast('تم النسخ بنجاح!');
+
+      const data = await response.json();
+      AppState.elements.passwordField.value = data.password;
+      Helpers.showToast(data.message || 'Password generated');
     } catch (error) {
-      utils.handleError(new Error(CONFIG.ERROR_MESSAGES.COPY_FAILED));
+      console.error('Generation error:', error);
+      Helpers.showToast(error.message || 'Error occurred', true);
+    } finally {
+      Helpers.setLoading(false);
     }
   },
 
-  handleThemeToggle() {
-    state.currentTheme = state.currentTheme === 'light' ? 'dark' : 'light';
-    document.body.className = `${state.currentTheme}-theme`;
-    localStorage.setItem('theme', state.currentTheme);
-    this.updateThemeIcon();
-  },
-
-  updateThemeIcon() {
-    const icon = DOM.elements.themeToggle.querySelector('i');
-    icon.className = state.currentTheme === 'dark' 
-      ? 'fas fa-moon' 
-      : 'fas fa-sun';
-  },
-
-  async handleLanguageChange(lang) {
-    state.currentLang = lang;
-    localStorage.setItem('lang', lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    await this.loadTranslations();
-  },
-
-  async loadTranslations() {
+  /**
+   * معالجة نسخ كلمة المرور
+   */
+  handleCopy: async () => {
     try {
-      const response = await fetch(`/lang/${state.currentLang}.json`);
-      state.translations = await response.json();
-      this.updateUIText();
+      if (!AppState.elements.passwordField.value) {
+        throw new Error(AppState.state.translations[AppState.state.currentLang]?.no_password || 'No password to copy');
+      }
+      await navigator.clipboard.writeText(AppState.elements.passwordField.value);
+      Helpers.showToast(AppState.state.translations[AppState.state.currentLang]?.copied || 'Copied!');
     } catch (error) {
-      utils.handleError(error);
+      console.error('Copy error:', error);
+      Helpers.showToast(error.message || 'Copy failed', true);
     }
   },
 
-  updateUIText() {
-    document.querySelectorAll('[data-translate]').forEach(el => {
-      const key = el.dataset.translate;
-      el.textContent = state.translations[key] || el.textContent;
-    });
+  /**
+   * تبديل السمة بين الفاتح والداكن
+   */
+  handleThemeToggle: () => {
+    AppState.state.currentTheme = AppState.state.currentTheme === 'light' ? 'dark' : 'light';
+    document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
+    localStorage.setItem('theme', AppState.state.currentTheme);
+    
+    if (AppState.elements.themeIcon) {
+      AppState.elements.themeIcon.className = AppState.state.currentTheme === 'dark' 
+        ? 'fa fa-moon icon' 
+        : 'fa fa-sun icon';
+    }
+  },
+
+  /**
+   * تغيير لغة التطبيق
+   * @param {string} lang - كود اللغة (ar/en)
+   */
+  handleLanguageChange: async (lang) => {
+    try {
+      AppState.state.currentLang = lang;
+      localStorage.setItem('lang', lang);
+      
+      // تحديث اتجاه الصفحة حسب اللغة
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      
+      await TranslationService.loadTranslations(lang);
+      Helpers.showToast(`Language changed to ${lang === 'ar' ? 'Arabic' : 'English'}`);
+    } catch (error) {
+      console.error('Language change error:', error);
+    }
+  },
+
+  /**
+   * إغلاق تنبيه الخدمة
+   */
+  handleCloseAlert: () => {
+    Helpers.closeAlert();
   }
 };
 
-// ==== Initialization ====
-const init = () => {
-  // Event Listeners
-  DOM.elements.generateBtn.addEventListener('click', (e) => handlers.handleGenerate(e));
-  document.getElementById('copy').addEventListener('click', () => handlers.handleCopy());
-  DOM.elements.themeToggle.addEventListener('click', () => handlers.handleThemeToggle());
-  document.getElementById('type').addEventListener('change', () => {
-    document.querySelectorAll('.options-group').forEach(g => g.style.display = 'none');
-    document.getElementById(`${DOM.elements.typeSelector.value}-options`).style.display = 'block';
-  });
-
-  // Initial Setup
-  handlers.handleThemeToggle();
-  handlers.handleLanguageChange(state.currentLang);
+/**
+ * خدمة الترجمة
+ * مسؤولة عن تحميل وإدارة الترجمات
+ */
+const TranslationService = {
+  /**
+   * تحميل الترجمات من ملفات JSON
+   * @param {string} lang - كود اللغة المطلوبة
+   */
+  loadTranslations: async (lang) => {
+    try {
+      const response = await fetch(`/lang/${lang}.json?t=${Date.now()}`);
+      
+      // استخدام الترجمات من الملف أو الترجمات الافتراضية
+      AppState.state.translations[lang] = response.ok 
+        ? await response.json() 
+        : AppState.defaultTranslations[lang];
+      
+      UI.updateTextContent();
+    } catch (error) {
+      console.error('Translation error:', error);
+      // استخدام الترجمات الافتراضية في حالة الخطأ
+      AppState.state.translations[lang] = AppState.defaultTranslations[lang];
+      UI.updateTextContent();
+    }
+  }
 };
 
-// Start Application
-document.addEventListener('DOMContentLoaded', init);
+/**
+ * واجهة المستخدم
+ * مسؤولة عن إدارة عناصر DOM وتفاعلات الواجهة
+ */
+const UI = {
+  /**
+   * تهيئة عناصر DOM
+   */
+  initializeElements: () => {
+    AppState.elements = {
+      typeSelector: document.getElementById('type'),
+      generateBtn: document.getElementById('generate'),
+      copyBtn: document.getElementById('copy'),
+      passwordField: document.getElementById('password'),
+      lengthInput: document.getElementById('custom-length'),
+      strongLength: document.getElementById('strong-length'),
+      uppercaseCheckbox: document.getElementById('uppercase'),
+      numbersCheckbox: document.getElementById('numbers'),
+      symbolsCheckbox: document.getElementById('symbols'),
+      strongOptions: document.getElementById('strong-options'),
+      pinLengthSelect: document.getElementById('pin-length'),
+      customCharsInput: document.getElementById('custom-chars'),
+      customOptions: document.getElementById('custom-options'),
+      pinOptions: document.getElementById('pin-options'),
+      themeToggle: document.getElementById('theme-toggle'),
+      loadingIndicator: document.getElementById('loading'),
+      themeIcon: document.getElementById('theme-icon'),
+      langArButton: document.getElementById('language-ar'),
+      langEnButton: document.getElementById('language-en'),
+      serviceAlert: document.getElementById('serviceAlert'),
+      closeAlertBtn: document.getElementById('closeAlert'),
+      alertTitle: document.getElementById('alertTitle'),
+      alertMessage: document.getElementById('alertMessage'),
+      alertContact: document.getElementById('alertContact')
+    };
+  },
+
+  /**
+   * تحديث النصوص حسب اللغة الحالية
+   */
+  updateTextContent: () => {
+    const lang = AppState.state.currentLang;
+    // استخدام الترجمات المحملة أو الافتراضية
+    const t = AppState.state.translations[lang] || AppState.defaultTranslations[lang];
+    
+    // عناصر DOM التي تحتاج تحديث النص
+    const elementsToUpdate = {
+      'page_title': () => document.title = t.page_title,
+      'title': AppState.elements.title,
+      'description': AppState.elements.description,
+      'theme_toggle': AppState.elements.themeToggle,
+      'password_type': AppState.elements.passwordTypeLabel,
+      'custom_option': AppState.elements.customOption,
+      'strong_option': AppState.elements.strongOption,
+      'memorable_option': AppState.elements.memorableOption,
+      'pin_option': AppState.elements.pinOption,
+      'password_length': AppState.elements.passwordLengthLabel,
+      'custom_chars': AppState.elements.customCharsLabel,
+      'generate_button': AppState.elements.generateBtn,
+      'password_placeholder': AppState.elements.passwordField,
+      'copy_button': AppState.elements.copyBtn,
+      'uppercase': AppState.elements.uppercaseLabel,
+      'numbers': AppState.elements.numbersLabel,
+      'symbols': AppState.elements.symbolsLabel,
+      'pin_length': AppState.elements.pinLengthLabel,
+      'alert_title': AppState.elements.alertTitle,
+      'alert_message': AppState.elements.alertMessage,
+      'alert_contact': AppState.elements.alertContact
+    };
+
+    // تحديث نصوص العناصر
+    Object.entries(elementsToUpdate).forEach(([key, element]) => {
+      if (typeof element === 'function') {
+        element();
+      } else if (element) {
+        element.textContent = t[key] || '';
+      }
+    });
+  },
+
+  /**
+   * إعداد معالجي الأحداث
+   */
+  setupEventListeners: () => {
+    // دالة مساعدة لإضافة معالج الأحداث مع التحقق من وجود العنصر
+    const addEventListener = (element, event, handler) => {
+      if (element) element.addEventListener(event, handler);
+    };
+
+    // إضافة معالجي الأحداث
+    addEventListener(AppState.elements.typeSelector, 'change', EventHandlers.handleTypeChange);
+    addEventListener(AppState.elements.generateBtn, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleGenerate();
+    });
+    addEventListener(AppState.elements.copyBtn, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleCopy();
+    });
+    addEventListener(AppState.elements.themeToggle, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleThemeToggle();
+    });
+    addEventListener(AppState.elements.langArButton, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleLanguageChange('ar');
+    });
+    addEventListener(AppState.elements.langEnButton, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleLanguageChange('en');
+    });
+    addEventListener(AppState.elements.closeAlertBtn, 'click', (e) => {
+      e.preventDefault();
+      EventHandlers.handleCloseAlert();
+    });
+  },
+
+  /**
+   * تهيئة التطبيق
+   */
+  initialize: async () => {
+    try {
+      this.initializeElements();
+      this.setupEventListeners();
+      
+      // تطبيق السمة المختارة
+      document.body.className = AppState.state.currentTheme === 'dark' ? 'dark-theme' : '';
+      
+      // تحديث أيقونة السمة
+      if (AppState.elements.themeIcon) {
+        AppState.elements.themeIcon.className = AppState.state.currentTheme === 'dark' 
+          ? 'fa fa-moon icon' 
+          : 'fa fa-sun icon';
+      }
+      
+      // إخفاء التنبيه إذا كان مغلقاً مسبقاً
+      if (AppState.state.alertClosed && AppState.elements.serviceAlert) {
+        AppState.elements.serviceAlert.style.display = 'none';
+      }
+      
+      // تحميل الترجمات وتحديث الواجهة
+      await TranslationService.loadTranslations(AppState.state.currentLang);
+      
+      // تحديث خيارات نوع كلمة المرور
+      EventHandlers.handleTypeChange();
+      
+      console.log('Application initialized successfully');
+    } catch (error) {
+      console.error('Initialization error:', error);
+    }
+  }
+};
+
+// بدء التطبيق عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+  UI.initialize();
+});
