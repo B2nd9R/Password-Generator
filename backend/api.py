@@ -232,3 +232,9 @@ def validate_password_length(length: int, min_len: int = 4, max_len: int = 64):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.api:app", host="0.0.0.0", port=8000, reload=True)
+
+print("\n=== Static Files Check ===")
+print(f"Static dir exists: {STATIC_DIR.exists()}")
+print(f"Lang dir exists: {LANG_DIR.exists()}")
+print(f"JS file exists: {(STATIC_DIR/'script.js').exists()}")
+print(f"ar.json exists: {(LANG_DIR/'ar.json').exists()}")
